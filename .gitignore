@@ -1,0 +1,7 @@
+node_modules/
+dist/
+# raw library + caches stay local; only public/data/library.json is published
+data/raw/
+data/cache/
+.DS_Store
+.vercel

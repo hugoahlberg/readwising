@@ -1,0 +1,595 @@
+{
+ "_doc": "Reviewed relations between highlights (Readwise ids). stance: echo|extend|complicate|contradict. 'both' = where both could be true; required for complicate/contradict. by: who judged it. Add or edit freely; the build keeps whatever is here.",
+ "relations": [
+  {
+   "a": 1000655420,
+   "b": 1043102942,
+   "stance": "echo",
+   "why": "Both locate the failure in waiting to be rescued. Vance names it as a culture; Hall treats it as a habit you can break.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1000655420,
+   "b": 1000655421,
+   "stance": "contradict",
+   "why": "Vance blames missing agency, then concedes in the same book that networks beat both luck and merit.",
+   "both": "agency gets you to the door, and the network decides whether it opens.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1000655420,
+   "b": 1055636496,
+   "stance": "contradict",
+   "why": "Durant treats concentration as a structural law of complex economies, not a failure of individual will.",
+   "both": "individuals can beat the trend while the trend still holds on average.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1000655420,
+   "b": 1000655424,
+   "stance": "extend",
+   "why": "Same book, the prescription: stop outsourcing blame to presidents and faceless companies.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1000655420,
+   "b": 987603990,
+   "stance": "echo",
+   "why": "A first-century Stoic and an Appalachian memoir reach the same diagnosis: blame is a way of handing away control.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1043102942,
+   "b": 1047171520,
+   "stance": "extend",
+   "why": "The fictitious-versus-real barrier distinction is the operating manual for naming problems out loud.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1043102942,
+   "b": 1000655416,
+   "stance": "complicate",
+   "why": "The Yale professor is humbler. You probably can't fix it; you can only put a thumb on the scale.",
+   "both": "you act fully on what's in reach and expect the system to move by inches.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1000655421,
+   "b": 1026759958,
+   "stance": "extend",
+   "why": "Qureshi's answer to 'networks beat merit': manufacture luck by increasing your surface area.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1026759958,
+   "b": 1026759945,
+   "stance": "echo",
+   "why": "Asking more is how surface area grows. Being fine with 'no' is the cost of entry.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1047171520,
+   "b": 1026759945,
+   "stance": "echo",
+   "why": "Two writers, one move: make reality say no instead of saying it for yourself.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1000655419,
+   "b": 1000655421,
+   "stance": "complicate",
+   "why": "Mamaw's 'you can do anything' sits right beside Vance's own evidence that who you know decides a lot.",
+   "both": "believing in agency is useful precisely because it isn't entirely accurate.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1055636496,
+   "b": 1055636489,
+   "stance": "echo",
+   "why": "Durant twice: history is indifferent to fairness.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1073252822,
+   "b": 1026759948,
+   "stance": "echo",
+   "why": "Two lists, one rule: bias toward the next step, not the perfect plan.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1026759948,
+   "b": 1063294679,
+   "stance": "echo",
+   "why": "Research is a respectable-looking form of resistance.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1026759948,
+   "b": 987603997,
+   "stance": "contradict",
+   "why": "Epictetus asks for a deliberate pause to trace consequences before acting.",
+   "both": "speed is for reversible decisions and deliberation for irreversible ones.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1026759948,
+   "b": 1055636482,
+   "stance": "contradict",
+   "why": "If the downside is ruin, no amount of speed or upside justifies the bet.",
+   "both": "you move fast inside a strategy that can't kill you.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1073252822,
+   "b": 1037536433,
+   "stance": "extend",
+   "why": "Why good-enough works: hard decisions inflate their own importance until they stall you.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1037536433,
+   "b": 1011471843,
+   "stance": "echo",
+   "why": "Marcus Aurelius anticipated decision-fatigue research by 1,800 years: attention should match its object.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1037536433,
+   "b": 1032236072,
+   "stance": "echo",
+   "why": "Parkinson's Law of Triviality is the same loop seen from the outside.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 987603993,
+   "b": 1026759948,
+   "stance": "extend",
+   "why": "Being willing to bumble is the emotional precondition for doing things fast.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1037536441,
+   "b": 987603997,
+   "stance": "complicate",
+   "why": "Kierkegaard puts a ceiling on deliberation: you only understand a decision after you've lived it.",
+   "both": "you plan to the point of diminishing returns, then let the doing teach you.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 987603997,
+   "b": 1055636482,
+   "stance": "echo",
+   "why": "Both demand you trace the chain of consequences before committing.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1063294679,
+   "b": 976268135,
+   "stance": "extend",
+   "why": "Mantel explains why more information isn't the cure: information is not knowledge.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1055636490,
+   "b": 980358188,
+   "stance": "contradict",
+   "why": "Durant: no single mind can safely dismiss inherited customs. Shaw: all progress depends on the one who refuses to adapt.",
+   "both": "most unreasonable people are wrong, and the few who aren't are why progress happens. Durant is describing the base rate; Shaw is describing the tail.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1055636490,
+   "b": 1029721245,
+   "stance": "contradict",
+   "why": "Dissent as the engine of progress, against custom as the accumulated result of experiment.",
+   "both": "customs are the record of past dissents that survived.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1055636490,
+   "b": 1055636497,
+   "stance": "extend",
+   "why": "Religion is Durant's clearest case of a custom carrying generational wisdom.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1055636497,
+   "b": 1067352985,
+   "stance": "echo",
+   "why": "A 1968 historian and an MIT economist make the same claim: church as habit infrastructure.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 980358188,
+   "b": 1026759956,
+   "stance": "echo",
+   "why": "Plant the flag, and let the world adapt to you.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1029721245,
+   "b": 1073253431,
+   "stance": "extend",
+   "why": "Kindness is what lets dissent be heard instead of punished.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1055636489,
+   "b": 1042558086,
+   "stance": "echo",
+   "why": "What survives defines 'good': Durant on civilizations, evolutionary psychology on moral instincts.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1042558086,
+   "b": 1029721245,
+   "stance": "extend",
+   "why": "If both political instincts survived evolution, silencing either side throws away an adaptation.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1055636479,
+   "b": 1026759956,
+   "stance": "extend",
+   "why": "Taleb explains where the approval-seeking came from: norms designed to domesticate.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1055636490,
+   "b": 1055636479,
+   "stance": "contradict",
+   "why": "Taleb reads custom as domestication by the powerful, not as distilled wisdom.",
+   "both": "a custom can encode wisdom and serve power at the same time.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1019625029,
+   "b": 987603992,
+   "stance": "echo",
+   "why": "Housel's equation is Epictetus' advice with a minus sign.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1019625029,
+   "b": 1011471841,
+   "stance": "echo",
+   "why": "Use comfort when it's there and don't miss it when it isn't. Wanting little, from the emperor's side.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1019625029,
+   "b": 980358188,
+   "stance": "contradict",
+   "why": "Shaw's unreasonable man never lowers his wants. That's the whole point.",
+   "both": "you're content with things and unreasonable about work.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 987603992,
+   "b": 1055636486,
+   "stance": "contradict",
+   "why": "Taleb ranks courage, meaning risk-taking, as the highest virtue. Epictetus counsels reining desire in.",
+   "both": "you restrain your desire for outcomes and keep the courage for the attempt.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1024942533,
+   "b": 1019625029,
+   "stance": "complicate",
+   "why": "Perkins warns that too much restraint wastes the only resource that doesn't renew.",
+   "both": "you want little, but spend on what you do want while you can still enjoy it.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1024942533,
+   "b": 1073251583,
+   "stance": "echo",
+   "why": "A fun-money account is Die with Zero in miniature.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1073251590,
+   "b": 1021764582,
+   "stance": "echo",
+   "why": "The same law at two scales: the first three bites, the occasional treat.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1021764582,
+   "b": 1019625029,
+   "stance": "extend",
+   "why": "Keep wants low and every treat registers as a surplus.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1026759955,
+   "b": 1026759948,
+   "stance": "echo",
+   "why": "Speed as a stance on life, not just on tasks.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1026759955,
+   "b": 987603992,
+   "stance": "complicate",
+   "why": "Leaning into every new thing can be desire wearing curiosity's clothes.",
+   "both": "curiosity is aimed at what's in your control: learning, not acquiring.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1024942536,
+   "b": 1055636482,
+   "stance": "echo",
+   "why": "Taleb twice: fragility scales with what you fear losing, and ruin can't be offset.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1024942536,
+   "b": 1055636486,
+   "stance": "complicate",
+   "why": "The same author calls courage the highest virtue, yet says fragility grows with what you stand to lose.",
+   "both": "you keep what you have to lose small, so you can afford to be brave.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1031714351,
+   "b": 1032236071,
+   "stance": "echo",
+   "why": "Holding contradictory ideas at once, from two directions.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1031714351,
+   "b": 1037536440,
+   "stance": "complicate",
+   "why": "Kelly says prepare for unprecedented uncertainty. Kyle says 'this time is different' are the four most dangerous words.",
+   "both": "you assume it's the same until evidence forces otherwise, then update fast.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1037536440,
+   "b": 978030847,
+   "stance": "contradict",
+   "why": "An engineer with 15 years of code argues this time really is different: execution is no longer the moat.",
+   "both": "base rates win most of the time, and the costly errors are the rare times they don't.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 978030847,
+   "b": 954875631,
+   "stance": "contradict",
+   "why": "Wang shows execution, the factory floor, is exactly where China's innovation lives.",
+   "both": "AI commoditizes software execution while physical execution stays scarce.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1019625021,
+   "b": 1066993121,
+   "stance": "echo",
+   "why": "Rationalizing, not rational. Comfort before truth.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1066993121,
+   "b": 1043100290,
+   "stance": "extend",
+   "why": "Hall turns Russell's observation into a question you can actually ask yourself.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1043100290,
+   "b": 971594557,
+   "stance": "extend",
+   "why": "A worked example: a German economist conceding a point to a politician he plainly dislikes.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1019625022,
+   "b": 1019625021,
+   "stance": "echo",
+   "why": "Beliefs follow geography, and the reasons arrive afterward.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1019625022,
+   "b": 1055636490,
+   "stance": "complicate",
+   "why": "If consensus is mostly geography, inherited customs may encode location more than wisdom.",
+   "both": "local customs are wise locally, and only there.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1032236071,
+   "b": 980358188,
+   "stance": "echo",
+   "why": "The unreasonable idea is often just the opposite idea, tried.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1041095748,
+   "b": 1019048734,
+   "stance": "echo",
+   "why": "The mind as a garden with a gate, built for analog inputs.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1041095748,
+   "b": 1029721245,
+   "stance": "contradict",
+   "why": "Mastroianni curates what gets in. The dissent argument says exposure to the other side is the point.",
+   "both": "you keep out the noise, not the opponents.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1063294677,
+   "b": 976268135,
+   "stance": "echo",
+   "why": "Knowledge outruns wisdom; information isn't knowledge. Same gradient.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1021764588,
+   "b": 1041095748,
+   "stance": "echo",
+   "why": "Old books, nature and religion as filters on what gets into your head.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1019048730,
+   "b": 1041095748,
+   "stance": "extend",
+   "why": "Why filtering beats refuting: nonsense is cheaper to produce than to clean up.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1021764588,
+   "b": 1055636490,
+   "stance": "echo",
+   "why": "Perell's way out of culture runs through tradition: old books and religion.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1011471839,
+   "b": 1067796572,
+   "stance": "echo",
+   "why": "A Roman emperor and an F-16 pilot on 9/11: attend to what you must do, not to what you feel.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1011471839,
+   "b": 1019048732,
+   "stance": "complicate",
+   "why": "Saunders asks you to open up to whatever makes you kinder. Marcus asks you to stop caring what they think.",
+   "both": "you detach from opinion, not from people.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 987603990,
+   "b": 1000655424,
+   "stance": "echo",
+   "why": "Epictetus and Vance land on the same move: drop the blame, keep the agency.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 983023270,
+   "b": 1050818463,
+   "stance": "echo",
+   "why": "Old injuries keep frightening us long after they could hurt us.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 983023270,
+   "b": 987603995,
+   "stance": "extend",
+   "why": "The Stoic cure for imagined suffering is to look straight at the real kind.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1033679544,
+   "b": 1011471839,
+   "stance": "echo",
+   "why": "Stewing over an insult hands the other person the controls.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 1067796572,
+   "b": 1019048732,
+   "stance": "contradict",
+   "why": "Penney's emotional shutdown made her effective. Saunders treats openness as the thing that matters most.",
+   "both": "you shut down for the crisis and open up for the life.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 960430237,
+   "b": 960429591,
+   "stance": "echo",
+   "why": "Even the inner screen isn't standard equipment.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 960429591,
+   "b": 1019625022,
+   "stance": "extend",
+   "why": "Consensus realities go all the way down, to how each of us experiences a thought.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  },
+  {
+   "a": 954875631,
+   "b": 1037536441,
+   "stance": "extend",
+   "why": "Learning by doing at industrial scale: understanding arrives after production, not before.",
+   "by": "claude",
+   "reviewed": "2026-11-24"
+  }
+ ]
+}

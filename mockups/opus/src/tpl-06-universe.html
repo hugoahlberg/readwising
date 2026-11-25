@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Commonplace — Universe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --void:#0c0c0b; --paper:#f3f2ee; --mute:#8b8880; --dim:#3a3935; --red:#ff4426;
+  --m:32px; --g:20px; --top:64px;
+  --sans:"Inter Tight","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--void);color:var(--paper);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+a{color:inherit}
+.mono{font-family:var(--mono);font-size:11px;letter-spacing:.02em;text-transform:uppercase}
+canvas{display:block}
+#bar{position:fixed;z-index:10;top:0;left:0;right:0;height:var(--top);display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:var(--g);
+  padding:0 var(--m);align-items:center;border-bottom:1px solid var(--dim)}
+#mark{grid-column:1/4;font-weight:600;font-size:17px;letter-spacing:-.01em;display:flex;gap:10px;align-items:center;text-decoration:none}
+#mark i{width:12px;height:12px;background:var(--red);display:inline-block}
+#nav{grid-column:4/7;display:flex;gap:18px}
+#nav a{color:var(--mute);text-decoration:none}#nav a.on{color:var(--paper)}
+#mode{grid-column:7/13;text-align:right;color:var(--mute)}
+#mode b{color:var(--paper);font-weight:500}
+#labels{position:fixed;inset:0;pointer-events:none;z-index:2;overflow:hidden}
+.tl{position:absolute;transform:translate(-50%,-50%);font:500 10px var(--mono);letter-spacing:.2em;color:var(--mute);white-space:nowrap}
+.nl{position:absolute;font:500 10px var(--mono);transform:translate(10px,-50%);white-space:nowrap;color:var(--paper)}
+.nl.r{color:var(--red)}
+#tip{position:fixed;z-index:5;pointer-events:none;max-width:300px;font-size:14px;line-height:1.35;opacity:0;transform:translate(16px,16px);transition:opacity .15s;
+  border-left:2px solid var(--paper);padding:2px 0 2px 12px}
+#tip .mono{display:block;color:var(--mute);margin-top:6px;font-size:10px}
+#intro{position:fixed;z-index:3;left:var(--m);bottom:var(--m);width:min(380px,calc(100vw - 2*var(--m)));transition:opacity .4s}
+#intro h1{margin:0 0 14px;font-weight:500;font-size:clamp(28px,2.8vw,42px);line-height:1;letter-spacing:-.035em}
+#intro h1 em{font-style:normal;color:var(--red)}
+#intro p{margin:0;color:var(--mute);font-size:14px;line-height:1.45}
+.legend{display:grid;grid-template-columns:24px 1fr;gap:6px 10px;align-items:center;margin-top:18px;color:var(--mute)}
+.sw{height:0;border-top:1px solid var(--paper);opacity:.5}.sw.r{border-color:var(--red);opacity:1;border-top-width:2px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--paper)}.dot.r{background:var(--red)}
+body.sel #intro{opacity:0;pointer-events:none}
+#panel{position:fixed;z-index:6;top:calc(var(--top) + 24px);right:var(--m);width:min(420px,calc(100vw - 2*var(--m)));max-height:calc(100vh - var(--top) - 48px);
+  overflow:auto;transform:translateX(calc(100% + 40px));transition:transform .6s cubic-bezier(.75,0,.2,1);
+  background:rgba(12,12,11,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:2px solid var(--paper);padding:12px 0 20px}
+body.sel #panel{transform:none}
+#panel .over{display:flex;gap:12px;color:var(--mute);padding:0 2px}
+#panel .over button{margin-left:auto;color:var(--mute)}
+#panel blockquote{margin:22px 0 0;font-weight:500;font-size:24px;line-height:1.14;letter-spacing:-.022em;text-wrap:pretty}
+#panel .src{margin-top:14px;font-size:14px}#panel .src span{color:var(--mute)}
+#panel .open{display:inline-block;margin-top:18px;color:var(--paper);text-decoration:none;border-bottom:1px solid var(--paper);padding-bottom:2px;font-size:15px}
+#panel h3{margin:28px 0 6px;font:500 11px var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--mute);border-top:1px solid var(--dim);padding-top:10px;display:flex;justify-content:space-between}
+#panel h3.r{color:var(--red)}
+#panel ul{list-style:none;margin:0;padding:0}
+#panel li{padding:8px 0;border-bottom:1px solid #1f1e1c;font-size:13.5px;line-height:1.35;cursor:pointer;display:grid;grid-template-columns:22px 1fr;gap:4px}
+#panel li .mono{color:var(--mute);padding-top:2px;font-size:10px}
+#panel li.r .mono{color:var(--red)}
+#panel li:hover span:last-child{text-decoration:underline}
+#panel .why{display:block;color:var(--mute);font-size:12.5px;margin-top:4px}
+#panel .both{display:block;color:var(--red);font-size:12.5px;margin-top:4px}
+#hint{position:fixed;z-index:3;right:var(--m);bottom:var(--m);text-align:right;color:var(--mute);line-height:1.8;transition:opacity .4s}
+body.sel #hint{opacity:.35}
+#path{color:var(--red)}
+@media (max-width:860px){
+  :root{--m:16px;--g:12px}
+  #nav{grid-column:5/13;justify-content:flex-end}#mode,#hint{display:none}
+  #panel{top:auto;bottom:0;right:0;width:100%;max-height:55vh;transform:translateY(100%);padding:12px 16px 20px}
+  #intro p{display:none}
+}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head>
+<body>
+<header id="bar">
+  <a id="mark" href="05-spectrum.html"><i></i>Commonplace</a>
+  <nav id="nav" class="mono"><a href="05-spectrum.html">Index</a><a class="on" href="06-universe.html">Universe</a></nav>
+  <div id="mode" class="mono"></div>
+</header>
+<div id="labels"></div>
+<div id="tip"></div>
+<section id="intro">
+  <h1>Every highlight a star. <em>Red is where they argue.</em></h1>
+  <p>Drag to orbit, scroll to fly. Click a star to see what it touches. Shift-click a second one to find the chain of ideas between them.</p>
+  <div class="legend mono">
+    <span class="dot"></span><span>Connected highlight</span>
+    <span class="dot r"></span><span>Contested highlight</span>
+    <span class="sw"></span><span>Resonates</span>
+    <span class="sw r"></span><span>Pushes back</span>
+  </div>
+</section>
+<aside id="panel"></aside>
+<div id="hint" class="mono">Drag orbit · Scroll fly · Click focus<br>Shift-click trace a path · Esc release</div>
+
+<script>if (/still/.test(location.search)) window.STILL = true;</script>
+<script>/*__DATA__*/</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+
+const D = window.COMMONPLACE;
+const byId = Object.fromEntries(D.items.map(i => [i.id, i]));
+const PUSH = s => s === "complicate" || s === "contradict";
+const LABEL = {echo:"Echoes", extend:"Extends", complicate:"Complicates", contradict:"Contradicts"};
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const rels = id => D.edges.filter(e => e.a === id || e.b === id).map(e => ({...e, other: e.a === id ? e.b : e.a}));
+const contested = new Set(D.edges.filter(e => e.s === "contradict").flatMap(e => [e.a, e.b]));
+const voiceOf = it => it.voice || (it.au === "Unknown author" ? it.src : it.au);
+
+/* ---------- layout: theme centres on a sphere, items around them ---------- */
+let sd = 11; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+const gauss = () => Math.sqrt(-2 * Math.log(rnd() + 1e-9)) * Math.cos(6.2832 * rnd());
+const themes = Object.keys(D.themes), R = 58, centre = {};
+themes.forEach((t, i) => { // fibonacci sphere, flattened a little so it reads as a galaxy
+  const y = 1 - (i + .5) / themes.length * 2, r = Math.sqrt(1 - y*y), phi = i * 2.39996;
+  centre[t] = new THREE.Vector3(Math.cos(phi) * r * R, y * R * .55, Math.sin(phi) * r * R);
+});
+const pos = {};
+D.items.forEach(it => {
+  const c = centre[it.theme];
+  pos[it.id] = new THREE.Vector3(c.x + gauss()*9, c.y + gauss()*7, c.z + gauss()*9);
+});
+// pull connected items gently toward each other so cross-theme bridges shorten
+for (let k = 0; k < 40; k++) for (const e of D.edges){
+  const a = pos[e.a], b = pos[e.b], d = b.clone().sub(a), L = d.length();
+  if (L > 22){ d.multiplyScalar(.004); a.add(d); b.sub(d); }
+}
+
+/* ---------- three ---------- */
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(2, devicePixelRatio)); renderer.setSize(innerWidth, innerHeight);
+document.body.prepend(renderer.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x0c0c0b);
+scene.fog = new THREE.FogExp2(0x0c0c0b, .0042);
+const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, .1, 2000);
+camera.position.set(0, 46, 190);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = .06; controls.autoRotate = !window.STILL; controls.autoRotateSpeed = .35;
+controls.minDistance = 8; controls.maxDistance = 420;
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), .9, .55, .12);
+composer.addPass(bloom); composer.addPass(new OutputPass());
+
+const uTime = {value:0};
+/* background library: 7k+ faint stars */
+{
+  const N = D.total - D.items.length, p = new Float32Array(N*3), s = new Float32Array(N), ph = new Float32Array(N);
+  for (let i = 0; i < N; i++){
+    let v;
+    if (rnd() < .78){ const c = centre[themes[Math.floor(rnd()*themes.length)]]; v = [c.x + gauss()*20, c.y + gauss()*14, c.z + gauss()*20]; }
+    else { const u = rnd()*2-1, th = rnd()*6.283, rr = 70 + rnd()*160, q = Math.sqrt(1-u*u); v = [Math.cos(th)*q*rr, u*rr*.6, Math.sin(th)*q*rr]; }
+    p.set(v, i*3); s[i] = .6 + rnd()*1.6; ph[i] = rnd()*6.283;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.BufferAttribute(p, 3)); g.setAttribute("size", new THREE.BufferAttribute(s, 1)); g.setAttribute("phase", new THREE.BufferAttribute(ph, 1));
+  const m = new THREE.ShaderMaterial({transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, uniforms:{t:uTime, px:{value:renderer.getPixelRatio()}},
+    vertexShader:`attribute float size; attribute float phase; uniform float t; uniform float px; varying float vA;
+      void main(){ vec4 mv = modelViewMatrix * vec4(position,1.); gl_Position = projectionMatrix * mv;
+        gl_PointSize = size * px * (150. / -mv.z); vA = .35 + .25 * sin(t * 1.3 + phase); }`,
+    fragmentShader:`varying float vA; void main(){ float d = length(gl_PointCoord - .5); if (d > .5) discard;
+      gl_FragColor = vec4(vec3(.62,.6,.56), vA * smoothstep(.5, 0., d)); }`});
+  scene.add(new THREE.Points(g, m));
+}
+
+/* connected highlights */
+const nodeGeo = new THREE.BufferGeometry();
+const np = new Float32Array(D.items.length*3), nc = new Float32Array(D.items.length*3), ns = new Float32Array(D.items.length);
+D.items.forEach((it, i) => np.set(pos[it.id].toArray(), i*3));
+nodeGeo.setAttribute("position", new THREE.BufferAttribute(np, 3));
+nodeGeo.setAttribute("color", new THREE.BufferAttribute(nc, 3));
+nodeGeo.setAttribute("size", new THREE.BufferAttribute(ns, 1));
+const nodeMat = new THREE.ShaderMaterial({transparent:true, depthWrite:false, uniforms:{t:uTime, px:{value:renderer.getPixelRatio()}},
+  vertexShader:`attribute float size; attribute vec3 color; uniform float px; varying vec3 vC;
+    void main(){ vec4 mv = modelViewMatrix * vec4(position,1.); gl_Position = projectionMatrix * mv; gl_PointSize = size * px * (220. / -mv.z); vC = color; }`,
+  fragmentShader:`varying vec3 vC; void main(){ vec2 c = gl_PointCoord - .5; float d = length(c); if (d > .5) discard;
+    float core = smoothstep(.22, .12, d), halo = smoothstep(.5, .1, d) * .35; gl_FragColor = vec4(vC * (core + halo) * 1.4, core + halo); }`});
+const nodes = new THREE.Points(nodeGeo, nodeMat); scene.add(nodes);
+
+/* edges with pulses travelling along them */
+const eg = new THREE.BufferGeometry();
+const ep = new Float32Array(D.edges.length*6), ec = new Float32Array(D.edges.length*8), ea = new Float32Array(D.edges.length*2), ek = new Float32Array(D.edges.length*2);
+D.edges.forEach((e, i) => { ep.set([...pos[e.a].toArray(), ...pos[e.b].toArray()], i*6); ea.set([0, 1], i*2); ek.set([PUSH(e.s) ? 1 : 0, PUSH(e.s) ? 1 : 0], i*2); });
+eg.setAttribute("position", new THREE.BufferAttribute(ep, 3));
+eg.setAttribute("rgba", new THREE.BufferAttribute(ec, 4));
+eg.setAttribute("along", new THREE.BufferAttribute(ea, 1));
+eg.setAttribute("push", new THREE.BufferAttribute(ek, 1));
+const edgeMat = new THREE.ShaderMaterial({transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, uniforms:{t:uTime},
+  vertexShader:`attribute vec4 rgba; attribute float along; attribute float push; varying vec4 vC; varying float vA; varying float vP;
+    void main(){ gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); vC = rgba; vA = along; vP = push; }`,
+  fragmentShader:`uniform float t; varying vec4 vC; varying float vA; varying float vP;
+    void main(){ float speed = vP > .5 ? .55 : .22; float x = fract(vA - t * speed);
+      float pulse = smoothstep(.0, .06, x) * smoothstep(.16, .06, x);
+      gl_FragColor = vec4(vC.rgb * (1. + pulse * 2.5), vC.a * (.55 + pulse * 1.6)); }`});
+scene.add(new THREE.LineSegments(eg, edgeMat));
+
+/* ---------- state + colouring ---------- */
+const PAPER = new THREE.Color(0xf3f2ee), RED = new THREE.Color(0xff4426), GREY = new THREE.Color(0x55534e);
+const st = {sel:null, path:null, hover:null};
+function bfs(a, b){
+  const prev = {[a]:null}, q = [a];
+  while (q.length){ const x = q.shift(); if (x === b) break;
+    for (const r of rels(x)) if (!(r.other in prev)){ prev[r.other] = x; q.push(r.other); } }
+  if (!(b in prev)) return null;
+  const out = []; for (let x = b; x; x = prev[x]) out.unshift(x); return out;
+}
+function paint(){
+  const near = st.sel ? new Map(rels(st.sel).map(r => [r.other, r])) : null;
+  const onPath = st.path ? new Set(st.path) : null;
+  D.items.forEach((it, i) => {
+    let c = contested.has(it.id) ? RED : PAPER, s = contested.has(it.id) ? 6 : 4.6;
+    if (onPath){ if (!onPath.has(it.id)){ c = GREY; s = 3; } else s = 8; }
+    else if (st.sel){
+      if (it.id === st.sel){ s = 12; }
+      else if (near.has(it.id)){ c = PUSH(near.get(it.id).s) ? RED : PAPER; s = 7; }
+      else { c = GREY; s = 3; }
+    }
+    if (st.hover === it.id) s += 3;
+    nc.set([c.r, c.g, c.b], i*3); ns[i] = s;
+  });
+  nodeGeo.attributes.color.needsUpdate = true; nodeGeo.attributes.size.needsUpdate = true;
+  const pathEdges = new Set();
+  if (st.path) for (let i = 0; i < st.path.length - 1; i++) pathEdges.add([st.path[i], st.path[i+1]].sort().join("|"));
+  D.edges.forEach((e, i) => {
+    const p = PUSH(e.s), col = p ? RED : PAPER; let a;
+    if (st.path) a = pathEdges.has([e.a, e.b].sort().join("|")) ? 1 : .03;
+    else if (st.sel) a = (e.a === st.sel || e.b === st.sel) ? (p ? 1 : .8) : .03;
+    else a = p ? .55 : .14;
+    for (let k = 0; k < 2; k++) ec.set([col.r, col.g, col.b, a], (i*2 + k)*4);
+  });
+  eg.attributes.rgba.needsUpdate = true;
+  $("#mode").innerHTML = st.path ? `Path · <b>${st.path.length - 1} steps</b>` : st.sel ? `Focus · <b>${esc(byId[st.sel].theme)}</b>` :
+    `<b>${D.items.length}</b> connected · ${D.total.toLocaleString()} stars`;
+}
+
+/* ---------- camera flights ---------- */
+let flight = null;
+function flyTo(target, dist = 38){
+  const from = controls.target.clone(), camFrom = camera.position.clone();
+  const dir = camera.position.clone().sub(controls.target).normalize();
+  const camTo = target.clone().add(dir.multiplyScalar(dist));
+  if (window.STILL){ controls.target.copy(target); camera.position.copy(camTo); return; }
+  flight = {t:0, from, to:target.clone(), camFrom, camTo};
+}
+
+/* ---------- panel ---------- */
+function li(r, i){ const o = byId[r.other], p = PUSH(r.s);
+  return `<li class="${p ? "r" : ""}" data-id="${o.id}"><span class="mono">${String(i+1).padStart(2, "0")}</span>
+    <span>${esc(o.text.length > 140 ? o.text.slice(0, 140) + "…" : o.text)}<span class="why">${LABEL[r.s]} · ${esc(r.why)}</span>
+    ${r.both ? `<span class="both">Both true if ${esc(r.both)}</span>` : ""}</span></li>`; }
+function showPanel(){
+  const P = $("#panel");
+  if (st.path){
+    P.innerHTML = `<div class="over mono"><span id="path">Chain of ideas · ${st.path.length - 1} steps</span><button id="x">Esc ✕</button></div>
+      <ul style="margin-top:18px">${st.path.map((id, i) => { const it = byId[id]; const e = i ? D.edges.find(e => (e.a === id && e.b === st.path[i-1]) || (e.b === id && e.a === st.path[i-1])) : null;
+        return `<li class="${e && PUSH(e.s) ? "r" : ""}" data-id="${id}"><span class="mono">${String(i+1).padStart(2, "0")}</span><span>${e ? `<span class="why" style="margin:0 0 6px">${LABEL[e.s]} →</span>` : ""}${esc(it.text.length > 160 ? it.text.slice(0, 160) + "…" : it.text)}
+          <span class="why">${esc(voiceOf(it))}</span></span></li>`; }).join("")}</ul>`;
+  } else {
+    const it = byId[st.sel], R = rels(st.sel), res = R.filter(r => !PUSH(r.s)), push = R.filter(r => PUSH(r.s));
+    P.innerHTML = `<div class="over mono"><span>${esc(it.theme)}</span><span>${R.length} links</span><button id="x">Esc ✕</button></div>
+      <blockquote>“${esc(it.text)}”</blockquote>
+      <div class="src">${esc(it.voice || it.src)}<br><span>${it.voice ? "via " + esc(it.src) : esc(it.au)}</span></div>
+      <a class="open" href="05-spectrum.html#${it.id}">Open in Spectrum →</a>
+      <h3><span>Resonates</span><span>${res.length}</span></h3><ul>${res.map(li).join("")}</ul>
+      <h3 class="r"><span>Pushes back</span><span>${push.length}</span></h3><ul>${push.map(li).join("") || `<li style="display:block;color:var(--mute)">Nothing argues with this yet.</li>`}</ul>`;
+  }
+  $("#x").onclick = release;
+  P.querySelectorAll("li[data-id]").forEach(l => l.onclick = () => focus(l.dataset.id));
+  document.body.classList.add("sel"); offset(true);
+}
+function offset(on){ // keep the subject visible left of the panel
+  if (on && innerWidth > 860) camera.setViewOffset(innerWidth, innerHeight, 230, 0, innerWidth, innerHeight); else camera.clearViewOffset();
+}
+function focus(id){
+  st.sel = id; st.path = null; paint(); showPanel();
+  const span = Math.max(12, ...rels(id).map(r => pos[r.other].distanceTo(pos[id])));
+  flyTo(pos[id], Math.min(140, span * 2.2));
+  controls.autoRotate = false; history.replaceState(null, "", "#" + id); placeNodeLabels();
+}
+function trace(to){
+  const path = bfs(st.sel, to);
+  if (!path){ $("#mode").innerHTML = `<b style="color:var(--red)">No chain connects these yet</b>`; return; }
+  st.path = path; paint(); showPanel();
+  const c = new THREE.Vector3(); path.forEach(id => c.add(pos[id])); c.divideScalar(path.length);
+  const span = Math.max(...path.map(id => pos[id].distanceTo(c)));
+  flyTo(c, Math.max(40, span * 2.6)); placeNodeLabels();
+}
+function release(){
+  st.sel = null; st.path = null; paint(); document.body.classList.remove("sel"); offset(false);
+  controls.autoRotate = !window.STILL; history.replaceState(null, "", location.pathname);
+  flyTo(new THREE.Vector3(0, 0, 0), 190); placeNodeLabels();
+}
+
+/* ---------- labels ---------- */
+const labels = $("#labels");
+const themeLabels = themes.map(t => { const el = document.createElement("div"); el.className = "tl"; el.textContent = t; labels.appendChild(el);
+  return {el, p:centre[t].clone().add(new THREE.Vector3(0, 17, 0))}; });
+let nodeLabels = [];
+function placeNodeLabels(){
+  nodeLabels.forEach(l => l.el.remove()); nodeLabels = [];
+  const ids = st.path ? st.path : st.sel ? [st.sel, ...rels(st.sel).map(r => r.other)] : [];
+  ids.forEach((id, i) => { const el = document.createElement("div"); const it = byId[id];
+    const r = st.sel && !st.path ? rels(st.sel).find(x => x.other === id) : null;
+    el.className = "nl" + ((r && PUSH(r.s)) || (!r && contested.has(id) && !st.path && id === st.sel) ? " r" : "");
+    el.textContent = st.path ? `${String(i+1).padStart(2, "0")} ${(voiceOf(it) || "").split(/ and |,/)[0]}` : (voiceOf(it) || "").split(/ and |,/)[0];
+    labels.appendChild(el); nodeLabels.push({el, p:pos[id]}); });
+}
+const v = new THREE.Vector3();
+function project(list){ for (const l of list){ v.copy(l.p).project(camera);
+  const vis = v.z < 1; l.el.style.display = vis ? "" : "none";
+  l.el.style.left = (v.x * .5 + .5) * innerWidth + "px"; l.el.style.top = (-v.y * .5 + .5) * innerHeight + "px"; } }
+
+/* ---------- picking ---------- */
+const ray = new THREE.Raycaster(); ray.params.Points.threshold = 2.4;
+const mouse = new THREE.Vector2(); let down = null;
+function pick(e){ mouse.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); ray.setFromCamera(mouse, camera);
+  const hit = ray.intersectObject(nodes)[0]; return hit ? D.items[hit.index] : null; }
+renderer.domElement.addEventListener("pointermove", e => {
+  const it = pick(e), tip = $("#tip");
+  if ((it?.id || null) !== st.hover){ st.hover = it?.id || null; paint(); }
+  if (it){ tip.innerHTML = `${esc(it.text.length > 140 ? it.text.slice(0, 140) + "…" : it.text)}<span class="mono">${esc(voiceOf(it))} · ${esc(it.theme)}</span>`;
+    tip.style.left = e.clientX + "px"; tip.style.top = e.clientY + "px"; tip.style.opacity = 1; renderer.domElement.style.cursor = "pointer"; }
+  else { tip.style.opacity = 0; renderer.domElement.style.cursor = "grab"; }
+});
+renderer.domElement.addEventListener("pointerdown", e => down = [e.clientX, e.clientY]);
+renderer.domElement.addEventListener("pointerup", e => {
+  if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 4) return;
+  const it = pick(e); if (!it) return;
+  if (e.shiftKey && st.sel && it.id !== st.sel) trace(it.id); else focus(it.id);
+});
+addEventListener("keydown", e => { if (e.key === "Escape") release(); });
+addEventListener("resize", () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight); });
+
+/* ---------- loop ---------- */
+const clock = new THREE.Clock();
+function loop(){
+  uTime.value = clock.getElapsedTime();
+  if (flight){ flight.t = Math.min(1, flight.t + .018); const k = flight.t < .5 ? 4*flight.t**3 : 1 - (-2*flight.t + 2)**3 / 2;
+    controls.target.lerpVectors(flight.from, flight.to, k); camera.position.lerpVectors(flight.camFrom, flight.camTo, k);
+    if (flight.t >= 1) flight = null; }
+  controls.update(); composer.render(); project(themeLabels); project(nodeLabels);
+  requestAnimationFrame(loop);
+}
+paint(); loop();
+const h = decodeURIComponent(location.hash.slice(1));
+const [ha, hb] = h.split(">");
+if (byId[ha]){ focus(ha); if (byId[hb]) trace(hb); }
+</script>
+</body>
+</html>

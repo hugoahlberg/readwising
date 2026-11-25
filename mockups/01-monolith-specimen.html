@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>01 / Monolith Specimen — Ochre &amp; Umber Swiss Editorial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  .wrap {
+    width: 100%;
+  }
+
+  .artboard {
+    --bg: #E5AF28;
+    --ink: #14120E;
+    --ink-soft: rgba(20, 18, 14, 0.72);
+    --ink-muted: rgba(20, 18, 14, 0.52);
+    --rule: rgba(20, 18, 14, 0.24);
+    --rule-strong: rgba(20, 18, 14, 0.78);
+    --surface: rgba(20, 18, 14, 0.06);
+    --surface-hover: rgba(20, 18, 14, 0.13);
+    --invert-bg: #14120E;
+    --invert-ink: #E5AF28;
+    --accent: #3A2F1F;
+    --font-display: 'Barlow Condensed', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --font-sans: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --font-mono: 'IBM Plex Mono', 'SF Mono', ui-monospace, monospace;
+
+    position: relative;
+    width: 100%;
+    border-radius: var(--radius, 10px);
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    padding: 14px 18px 16px;
+    transition: background-color 0.35s ease, color 0.35s ease;
+  }
+
+  .artboard.theme-umber {
+    --bg: #3A2F1F;
+    --ink: #E6B33D;
+    --ink-soft: #EFE6D2;
+    --ink-muted: rgba(239, 230, 210, 0.6);
+    --rule: rgba(230, 179, 61, 0.26);
+    --rule-strong: rgba(230, 179, 61, 0.85);
+    --surface: rgba(230, 179, 61, 0.08);
+    --surface-hover: rgba(230, 179, 61, 0.16);
+    --invert-bg: #E6B33D;
+    --invert-ink: #241C11;
+    --accent: #EFE6D2;
+  }
+
+  #gl-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .grid-layer {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Top Hairline Control Bar */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding-bottom: 9px;
+    border-bottom: 1px solid var(--rule-strong);
+    flex-wrap: nowrap;
+  }
+  .brand {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .brand span { opacity: 0.55; font-weight: 400; }
+
+  .filters {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-wrap: nowrap;
+  }
+  .pill {
+    appearance: none;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    padding: 2.5px 5px;
+    cursor: pointer;
+    text-transform: uppercase;
+    border-radius: 2px;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .pill:hover {
+    border-color: var(--rule-strong);
+  }
+  .pill.active {
+    background: var(--invert-bg);
+    color: var(--invert-ink);
+    border-color: var(--invert-bg);
+  }
+
+  .controls-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .search-input {
+    width: 92px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--rule-strong);
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    padding: 2px 2px;
+    outline: none;
+  }
+  .search-input::placeholder {
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .theme-toggle {
+    appearance: none;
+    background: transparent;
+    border: 1px solid var(--rule-strong);
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    padding: 3px 7px;
+    cursor: pointer;
+    border-radius: 2px;
+    text-transform: uppercase;
+  }
+  .theme-toggle:hover {
+    background: var(--invert-bg);
+    color: var(--invert-ink);
+  }
+
+  /* Upper Poster Quote Band */
+  .poster-band {
+    padding: 14px 0 13px;
+    border-bottom: 1px solid var(--rule-strong);
+  }
+  .poster-eyebrow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+  }
+  .poster-eyebrow .tag-chip {
+    background: var(--invert-bg);
+    color: var(--invert-ink);
+    padding: 1px 6px;
+    font-weight: 600;
+  }
+  .poster-quote {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.11;
+    letter-spacing: -0.035em;
+    color: var(--ink);
+  }
+  .artboard.theme-umber .poster-quote {
+    color: #F2EAD7;
+  }
+
+  /* Middle Asymmetric 12-Col Split */
+  .mid-split {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--rule-strong);
+  }
+  .col-left {
+    grid-column: span 4;
+    border-right: 1px solid var(--rule);
+    padding-right: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .stacked-numeral {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 46px;
+    line-height: 0.84;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .stacked-numeral .sub-num {
+    display: block;
+    font-size: 36px;
+    opacity: 0.42;
+  }
+  .meta-block {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    line-height: 1.45;
+    color: var(--ink-soft);
+  }
+  .meta-author {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin-bottom: 2px;
+  }
+  .artboard.theme-umber .meta-author {
+    color: #F2EAD7;
+  }
+  .meta-title {
+    font-style: italic;
+    font-family: var(--font-sans);
+    font-size: 11px;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  .meta-kv {
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid var(--rule);
+    padding-top: 3px;
+    margin-top: 3px;
+  }
+
+  .col-right {
+    grid-column: span 8;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .section-kicker {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 3px;
+  }
+  .margin-note {
+    font-size: 12.5px;
+    line-height: 1.42;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+  .bridges-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 7px;
+  }
+  .bridge-card {
+    appearance: none;
+    text-align: left;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    color: var(--ink);
+    padding: 7px 9px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background 0.15s, border-color 0.15s, transform 0.15s;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .bridge-card:hover {
+    background: var(--surface-hover);
+    border-color: var(--rule-strong);
+    transform: translateY(-1px);
+  }
+  .bridge-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+  .bridge-score {
+    background: var(--invert-bg);
+    color: var(--invert-ink);
+    padding: 0 4px;
+    font-size: 8.5px;
+  }
+  .bridge-thesis {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+  .artboard.theme-umber .bridge-thesis {
+    color: #F2EAD7;
+  }
+  .bridge-target {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--ink-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Bottom Swiss Index Strip */
+  .index-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 0 6px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+  .index-list {
+    display: flex;
+    flex-direction: column;
+    max-height: 158px;
+    overflow-y: auto;
+    border-top: 1px solid var(--rule);
+  }
+  .index-list::-webkit-scrollbar { width: 4px; }
+  .index-list::-webkit-scrollbar-thumb { background: var(--rule-strong); }
+  .index-row {
+    appearance: none;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--rule);
+    color: var(--ink);
+    padding: 5.5px 6px;
+    display: grid;
+    grid-template-columns: 20px 58px 82px 132px 1fr;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    transition: background 0.12s, color 0.12s;
+  }
+  .index-row:hover {
+    background: var(--surface-hover);
+  }
+  .index-row.active {
+    background: var(--invert-bg);
+    color: var(--invert-ink);
+  }
+  .index-row .row-glyph { font-size: 11px; text-align: center; }
+  .index-row .row-code { font-weight: 600; }
+  .index-row .row-disc { font-size: 9px; opacity: 0.78; letter-spacing: 0.04em; }
+  .index-row .row-author {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 10.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .index-row .row-excerpt {
+    font-family: var(--font-sans);
+    font-size: 10.5px;
+    opacity: 0.85;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  @media (max-width: 560px) {
+    .mid-split { grid-template-columns: 1fr; }
+    .col-left { grid-column: span 1; border-right: none; border-bottom: 1px solid var(--rule); padding-right: 0; padding-bottom: 10px; }
+    .col-right { grid-column: span 1; }
+    .bridges-grid { grid-template-columns: 1fr; }
+    .poster-quote { font-size: 19px; }
+    .index-row { grid-template-columns: 18px 54px 1fr; }
+    .index-row .row-disc, .index-row .row-excerpt { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="artboard" id="artboard">
+    <canvas id="gl-canvas"></canvas>
+    <div class="grid-layer">
+      <header class="topbar">
+        <div class="brand">READWISING <span>/ SPECIMEN 01</span></div>
+        <div class="filters" id="filters"></div>
+        <div class="controls-right">
+          <input type="text" class="search-input" id="search" placeholder="Search...">
+          <button type="button" class="theme-toggle" id="theme-btn">UMBER</button>
+        </div>
+      </header>
+
+      <section class="poster-band">
+        <div class="poster-eyebrow" id="poster-eyebrow"></div>
+        <blockquote class="poster-quote" id="poster-quote"></blockquote>
+      </section>
+
+      <section class="mid-split">
+        <div class="col-left" id="col-left"></div>
+        <div class="col-right" id="col-right"></div>
+      </section>
+
+      <section class="index-section">
+        <div class="index-head">
+          <span id="index-count">CATALOG INDEX · 12 SPECIMENS</span>
+          <span>■ BOOK · ▬ ARTICLE · ● PODCAST · ◆ NOTE</span>
+        </div>
+        <div class="index-list" id="index-list"></div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const ITEMS = [
+    {
+      id: "BK·001", type: "book", glyph: "■", typeLabel: "BOOK", discipline: "DESIGN",
+      author: "Josef Müller-Brockmann", title: "Grid Systems in Graphic Design",
+      meta: "★ 5.0 · 14.2H READ · READWISE BOOKS",
+      quote: "The grid system is an aid, not a guarantee. It permits a number of possible uses and each designer can look for a solution appropriate to his personal style.",
+      note: "Constraint is the launchpad, never the cage. Swiss proportion lets multi-source text read like deliberate architecture rather than a messy feed.",
+      bridges: [
+        { to: "PD·022", score: 94, thesis: "CONSTRAINTS → EMERGENCE" },
+        { to: "NT·009", score: 92, thesis: "ESSENTIAL REDUCTION" }
+      ]
+    },
+    {
+      id: "BK·014", type: "book", glyph: "■", typeLabel: "BOOK", discipline: "SYSTEMS",
+      author: "Donella H. Meadows", title: "Thinking in Systems",
+      meta: "★ 4.75 · 11.8H READ · READWISE BOOKS",
+      quote: "Purposes are deduced from behavior, not from rhetoric or stated goals.",
+      note: "Any public second brain reveals its true purpose by what links you actively forge—not the folder taxonomy you declare upfront.",
+      bridges: [
+        { to: "BK·031", score: 93, thesis: "SYSTEMS UNDER PRESSURE" },
+        { to: "AR·088", score: 90, thesis: "BEHAVIOR MADE VISIBLE" }
+      ]
+    },
+    {
+      id: "BK·027", type: "book", glyph: "■", typeLabel: "BOOK", discipline: "ARCHITECTURE",
+      author: "Christopher Alexander", title: "A Pattern Language",
+      meta: "★ 5.0 · 22.4H READ · READWISE BOOKS",
+      quote: "Every place is given its character by certain patterns of events that keep on happening there.",
+      note: "Ideas behave like rooms: a recurring tension between two highlights creates a recognizable intellectual threshold.",
+      bridges: [
+        { to: "AR·104", score: 91, thesis: "LIVING TOPOLOGY" },
+        { to: "BK·062", score: 87, thesis: "RECIPROCAL PLACE" }
+      ]
+    },
+    {
+      id: "BK·031", type: "book", glyph: "■", typeLabel: "BOOK", discipline: "ARCHITECTURE",
+      author: "Stewart Brand", title: "How Buildings Learn",
+      meta: "★ 4.5 · 9.6H READ · READWISE BOOKS",
+      quote: "Almost no buildings adapt well. They're designed not to adapt; also budgeted, constructed, and administered not to.",
+      note: "Shearing layers apply directly to personal knowledge bases: fast highlights at the surface, slow enduring theses underneath.",
+      bridges: [
+        { to: "AR·119", score: 89, thesis: "PACE LAYERS × LATENCY" },
+        { to: "BK·014", score: 93, thesis: "SYSTEMS UNDER PRESSURE" }
+      ]
+    },
+    {
+      id: "BK·049", type: "book", glyph: "■", typeLabel: "BOOK", discipline: "PHILOSOPHY",
+      author: "Ted Chiang", title: "Exhalation",
+      meta: "★ 5.0 · 8.5H READ · READWISE BOOKS",
+      quote: "Contemplate the marvel that is existence, and rejoice that you are able to do so.",
+      note: "Reading isn't productivity hoarding; it is sharpening attention until ordinary mechanisms feel miraculous again.",
+      bridges: [
+        { to: "BK·062", score: 95, thesis: "RECIPROCAL ATTENTION" },
+        { to: "PD·037", score: 88, thesis: "FREQUENCY OF WONDER" }
+      ]
+    },
+    {
+      id: "BK·062", type: "book", glyph: "■", typeLabel: "BOOK", discipline: "ECOLOGY",
+      author: "Robin Wall Kimmerer", title: "Braiding Sweetgrass",
+      meta: "★ 5.0 · 13.1H READ · READWISE BOOKS",
+      quote: "Paying attention is a form of reciprocity with the living world, receiving the gifts with open eyes and open heart.",
+      note: "Highlighting is reciprocal attention: you honor the author by weaving their insight into new soil.",
+      bridges: [
+        { to: "BK·049", score: 95, thesis: "RECIPROCAL ATTENTION" },
+        { to: "PD·022", score: 91, thesis: "TENDING CONDITIONS" }
+      ]
+    },
+    {
+      id: "AR·088", type: "article", glyph: "▬", typeLabel: "ARTICLE", discipline: "COMPUTING",
+      author: "Bret Victor", title: "Seeing Spaces",
+      meta: "READER ARCHIVE · 18 MIN · 2026-09",
+      quote: "To understand a system, you must be able to see across time, across abstraction levels, and across possibilities simultaneously.",
+      note: "Why WebGL belongs on a reading page: spatial juxtaposition turns sequential text into an immediate visual instrument.",
+      bridges: [
+        { to: "BK·014", score: 90, thesis: "BEHAVIOR MADE VISIBLE" },
+        { to: "AR·119", score: 88, thesis: "DIRECT MANIPULATION" }
+      ]
+    },
+    {
+      id: "AR·104", type: "article", glyph: "▬", typeLabel: "ARTICLE", discipline: "KNOWLEDGE",
+      author: "Andy Matuschak", title: "Evergreen Notes",
+      meta: "READER ARCHIVE · 12 MIN · 2026-10",
+      quote: "Evergreen notes should be densely linked across contexts, not filed neatly inside rigid topic silos.",
+      note: "Directly validates unifying books, podcasts, and essays under one coordinate space instead of segregating by media format.",
+      bridges: [
+        { to: "PD·037", score: 96, thesis: "CROSS-CONTEXT RESONANCE" },
+        { to: "BK·027", score: 91, thesis: "LIVING TOPOLOGY" }
+      ]
+    },
+    {
+      id: "AR·119", type: "article", glyph: "▬", typeLabel: "ARTICLE", discipline: "CRAFT",
+      author: "Craig Mod", title: "Fast Software, the Best Software",
+      meta: "READER ARCHIVE · 9 MIN · 2026-10",
+      quote: "Speed is a design material. When latency drops below 50ms, the tool disappears and thought flows directly onto the canvas.",
+      note: "Static build + precomputed embeddings + GPU rendering = instant search and zero waiting while thinking.",
+      bridges: [
+        { to: "BK·031", score: 89, thesis: "PACE LAYERS × LATENCY" },
+        { to: "NT·009", score: 87, thesis: "FRICTIONLESS FORM" }
+      ]
+    },
+    {
+      id: "PD·022", type: "podcast", glyph: "●", typeLabel: "PODCAST", discipline: "AESTHETICS",
+      author: "Brian Eno", title: "On Generative Systems & Gardens",
+      meta: "SNIPD TRANSCRIPT · 42:15 · 2026-08",
+      quote: "Stop thinking like an architect who specifies every brick; start thinking like a gardener who plants seeds and tends conditions.",
+      note: "The exact complement to Müller-Brockmann's grid: define strict soil geometry, then let cross-domain wisdom self-organize inside it.",
+      bridges: [
+        { to: "BK·001", score: 94, thesis: "CONSTRAINTS → EMERGENCE" },
+        { to: "BK·062", score: 91, thesis: "TENDING CONDITIONS" }
+      ]
+    },
+    {
+      id: "PD·037", type: "podcast", glyph: "●", typeLabel: "PODCAST", discipline: "CRAFT",
+      author: "Rick Rubin", title: "The Creative Act Conversation",
+      meta: "SNIPD TRANSCRIPT · 19:08 · 2026-11",
+      quote: "Taste is not knowing all the rules; it is noticing when two unrelated fragments vibrate at the same frequency.",
+      note: "Cross-functional synthesis in one sentence: a podcast clip colliding with a Swiss design manual produces the spark.",
+      bridges: [
+        { to: "AR·104", score: 96, thesis: "CROSS-CONTEXT RESONANCE" },
+        { to: "BK·049", score: 88, thesis: "FREQUENCY OF WONDER" }
+      ]
+    },
+    {
+      id: "NT·009", type: "note", glyph: "◆", typeLabel: "NOTE", discipline: "DESIGN",
+      author: "Dieter Rams", title: "Archival Marginalia",
+      meta: "SHORT NOTE · MANUAL · 2026-07",
+      quote: "Less, but better — because it concentrates on the essential aspects, and the products are not burdened with non-essentials.",
+      note: "Stripping UI chrome down to hairlines, source glyphs, and monumental type lets the ideas carry the room.",
+      bridges: [
+        { to: "BK·001", score: 92, thesis: "ESSENTIAL REDUCTION" },
+        { to: "AR·119", score: 87, thesis: "FRICTIONLESS FORM" }
+      ]
+    }
+  ];
+
+  const itemById = Object.fromEntries(ITEMS.map((item, idx) => [item.id, { ...item, num: idx + 1 }]));
+  let activeId = "BK·001";
+  let filterType = "all";
+  let searchQuery = "";
+  let theme = "ochre";
+  let hoveredBridgeIdx = -1;
+  let wipeStart = -1;
+
+  const artboard = document.getElementById("artboard");
+  const filtersEl = document.getElementById("filters");
+  const searchEl = document.getElementById("search");
+  const themeBtn = document.getElementById("theme-btn");
+  const eyebrowEl = document.getElementById("poster-eyebrow");
+  const quoteEl = document.getElementById("poster-quote");
+  const colLeftEl = document.getElementById("col-left");
+  const colRightEl = document.getElementById("col-right");
+  const indexCountEl = document.getElementById("index-count");
+  const indexListEl = document.getElementById("index-list");
+  const canvas = document.getElementById("gl-canvas");
+
+  const filterDefs = [
+    { key: "all", label: "ALL" },
+    { key: "book", label: "■ BOOKS" },
+    { key: "article", label: "▬ ARTICLES" },
+    { key: "podcast", label: "● PODCASTS" },
+    { key: "note", label: "◆ NOTES" }
+  ];
+
+  function getFiltered() {
+    const q = searchQuery.trim().toLowerCase();
+    return ITEMS.filter(it => {
+      if (filterType !== "all" && it.type !== filterType) return false;
+      if (!q) return true;
+      return (
+        it.id.toLowerCase().includes(q) ||
+        it.author.toLowerCase().includes(q) ||
+        it.title.toLowerCase().includes(q) ||
+        it.discipline.toLowerCase().includes(q) ||
+        it.quote.toLowerCase().includes(q) ||
+        it.note.toLowerCase().includes(q)
+      );
+    });
+  }
+
+  function renderFilters() {
+    filtersEl.innerHTML = filterDefs.map(f => {
+      const cls = f.key === filterType ? "pill active" : "pill";
+      return `<button type="button" class="${cls}" data-filter="${f.key}">${f.label}</button>`;
+    }).join("");
+  }
+
+  function renderActive() {
+    const it = itemById[activeId];
+    const numStr = String(it.num).padStart(2, "0");
+    eyebrowEl.innerHTML = `
+      <span>SPECIMEN <span class="tag-chip">${it.glyph} ${it.id}</span> · ${it.typeLabel} · ${it.discipline}</span>
+      <span>${it.meta}</span>
+    `;
+    quoteEl.textContent = `“${it.quote}”`;
+
+    const codeParts = it.id.split("·");
+    colLeftEl.innerHTML = `
+      <div class="stacked-numeral">${codeParts[0]}·${codeParts[1]}<span class="sub-num">${numStr}/12</span></div>
+      <div class="meta-block">
+        <div class="meta-author">${it.author}</div>
+        <div class="meta-title">${it.title}</div>
+        <div class="meta-kv"><span>ORIGIN</span><span>${it.glyph} ${it.typeLabel}</span></div>
+        <div class="meta-kv"><span>FIELD</span><span>${it.discipline}</span></div>
+        <div class="meta-kv"><span>SYNC</span><span>STATIC + LIVE FEED</span></div>
+      </div>
+    `;
+
+    const bridgeCards = it.bridges.map((b, i) => {
+      const target = itemById[b.to];
+      return `
+        <button type="button" class="bridge-card" data-target="${target.id}" data-bidx="${i}">
+          <div class="bridge-head">
+            <span>↗ ${target.glyph} ${target.id} · ${target.discipline}</span>
+            <span class="bridge-score">${b.score}%</span>
+          </div>
+          <div class="bridge-thesis">${b.thesis}</div>
+          <div class="bridge-target">${target.author} — ${target.title}</div>
+        </button>
+      `;
+    }).join("");
+
+    colRightEl.innerHTML = `
+      <div>
+        <div class="section-kicker">MARGIN SYNTHESIS NOTE</div>
+        <p class="margin-note">${it.note}</p>
+      </div>
+      <div>
+        <div class="section-kicker">CROSS-FUNCTIONAL BRIDGES (${it.bridges.length})</div>
+        <div class="bridges-grid">${bridgeCards}</div>
+      </div>
+    `;
+
+    colRightEl.querySelectorAll(".bridge-card").forEach(btn => {
+      btn.addEventListener("mouseenter", () => { hoveredBridgeIdx = Number(btn.dataset.bidx); });
+      btn.addEventListener("mouseleave", () => { hoveredBridgeIdx = -1; });
+      btn.addEventListener("click", () => selectItem(btn.dataset.target));
+    });
+  }
+
+  function renderIndex() {
+    const rows = getFiltered();
+    indexCountEl.textContent = `CATALOG INDEX · SHOWING ${rows.length} OF ${ITEMS.length} SPECIMENS`;
+    if (rows.length === 0) {
+      indexListEl.innerHTML = `<div style="padding: 14px 6px; font-family: var(--font-mono); font-size: 10px; opacity: 0.7;">NO MATCHING HIGHLIGHTS IN CURRENT FILTER.</div>`;
+      return;
+    }
+    indexListEl.innerHTML = rows.map(r => {
+      const activeCls = r.id === activeId ? "index-row active" : "index-row";
+      return `
+        <button type="button" class="${activeCls}" data-id="${r.id}">
+          <span class="row-glyph">${r.glyph}</span>
+          <span class="row-code">${r.id}</span>
+          <span class="row-disc">${r.discipline}</span>
+          <span class="row-author">${r.author}</span>
+          <span class="row-excerpt">${r.quote}</span>
+        </button>
+      `;
+    }).join("");
+  }
+
+  function selectItem(id) {
+    if (!itemById[id]) return;
+    activeId = id;
+    hoveredBridgeIdx = -1;
+    wipeStart = performance.now();
+    renderActive();
+    renderIndex();
+  }
+
+  filtersEl.addEventListener("click", e => {
+    const btn = e.target.closest("[data-filter]");
+    if (!btn) return;
+    filterType = btn.dataset.filter;
+    const filtered = getFiltered();
+    if (filtered.length && !filtered.some(x => x.id === activeId)) {
+      activeId = filtered[0].id;
+    }
+    renderFilters();
+    renderActive();
+    renderIndex();
+  });
+
+  indexListEl.addEventListener("click", e => {
+    const row = e.target.closest("[data-id]");
+    if (!row) return;
+    selectItem(row.dataset.id);
+  });
+
+  searchEl.addEventListener("input", e => {
+    searchQuery = e.target.value;
+    const filtered = getFiltered();
+    if (filtered.length && !filtered.some(x => x.id === activeId)) {
+      activeId = filtered[0].id;
+      renderActive();
+    }
+    renderIndex();
+  });
+
+  themeBtn.addEventListener("click", () => {
+    theme = theme === "ochre" ? "umber" : "ochre";
+    artboard.classList.toggle("theme-umber", theme === "umber");
+    themeBtn.textContent = theme === "ochre" ? "UMBER" : "OCHRE";
+    wipeStart = performance.now();
+  });
+
+  // --- WebGL Shader Background + Sweeping Thread Layer ---
+  let gl = canvas.getContext("webgl", { antialias: true, alpha: true, preserveDrawingBuffer: true });
+  let pointer = { x: 0.65, y: 0.42 };
+  artboard.addEventListener("mousemove", e => {
+    const rect = artboard.getBoundingClientRect();
+    pointer.x = (e.clientX - rect.left) / Math.max(1, rect.width);
+    pointer.y = 1.0 - (e.clientY - rect.top) / Math.max(1, rect.height);
+  });
+
+  let bgProg, lineProg, quadBuf, lineBuf;
+
+  function compileShader(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+      console.error("Shader compile error:", gl.getShaderInfoLog(s));
+      return null;
+    }
+    return s;
+  }
+
+  function linkProgram(vsSrc, fsSrc) {
+    const vs = compileShader(gl.VERTEX_SHADER, vsSrc);
+    const fs = compileShader(gl.FRAGMENT_SHADER, fsSrc);
+    if (!vs || !fs) return null;
+    const p = gl.createProgram();
+    gl.attachShader(p, vs);
+    gl.attachShader(p, fs);
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
+      console.error("Program link error:", gl.getProgramInfoLog(p));
+      return null;
+    }
+    return p;
+  }
+
+  function initGL() {
+    if (!gl) return false;
+    const bgVS = `
+      attribute vec2 a_pos;
+      varying vec2 v_uv;
+      void main() {
+        v_uv = a_pos * 0.5 + 0.5;
+        gl_Position = vec4(a_pos, 0.0, 1.0);
+      }
+    `;
+    const bgFS = `
+      precision mediump float;
+      varying vec2 v_uv;
+      uniform float u_time;
+      uniform vec2 u_res;
+      uniform vec2 u_mouse;
+      uniform float u_theme;
+      uniform float u_wipe;
+
+      float hash(vec2 p) {
+        return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+      }
+      float noise(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        vec2 u = f * f * (3.0 - 2.0 * f);
+        return mix(
+          mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),
+          mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x),
+          u.y
+        );
+      }
+      void main() {
+        vec2 aspect = vec2(u_res.x / max(1.0, u_res.y), 1.0);
+        vec2 p = v_uv * aspect;
+        vec2 m = u_mouse * aspect;
+        float dist = length(p - m);
+        float warp = 0.045 * exp(-dist * 2.4) * sin(dist * 18.0 - u_time * 1.4);
+        float field = noise(p * 3.8 + vec2(u_time * 0.04, -u_time * 0.025))
+                    + 0.45 * noise(p * 8.2 - vec2(u_time * 0.03))
+                    + warp;
+        float contour = abs(fract(field * 6.5) - 0.5);
+        float line = 1.0 - smoothstep(0.0, 0.055, contour);
+        float grain = (hash(gl_FragCoord.xy + fract(u_time) * 60.0) - 0.5) * 0.055;
+
+        // Animated diagonal Swiss wipe band
+        float diag = (v_uv.x * 0.75 + v_uv.y * 0.25);
+        float wipeBand = exp(-pow((diag - u_wipe) * 14.0, 2.0)) * step(0.01, u_wipe) * step(u_wipe, 1.15);
+
+        vec3 baseOchre = vec3(0.898, 0.686, 0.157);
+        vec3 lineOchre = vec3(0.227, 0.184, 0.122);
+        vec3 baseUmber = vec3(0.227, 0.184, 0.122);
+        vec3 lineUmber = vec3(0.902, 0.702, 0.239);
+
+        vec3 base = mix(baseOchre, baseUmber, u_theme);
+        vec3 ink = mix(lineOchre, lineUmber, u_theme);
+
+        vec3 col = mix(base, ink, line * 0.095);
+        col = mix(col, ink, wipeBand * 0.18);
+        col += grain;
+        gl_FragColor = vec4(col, 1.0);
+      }
+    `;
+
+    const lineVS = `
+      attribute vec2 a_pos;
+      attribute float a_alpha;
+      varying float v_alpha;
+      void main() {
+        v_alpha = a_alpha;
+        gl_Position = vec4(a_pos, 0.0, 1.0);
+      }
+    `;
+    const lineFS = `
+      precision mediump float;
+      varying float v_alpha;
+      uniform vec3 u_color;
+      void main() {
+        gl_FragColor = vec4(u_color, v_alpha);
+      }
+    `;
+
+    bgProg = linkProgram(bgVS, bgFS);
+    lineProg = linkProgram(lineVS, lineFS);
+    if (!bgProg || !lineProg) return false;
+
+    quadBuf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+
+    lineBuf = gl.createBuffer();
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    return true;
+  }
+
+  function resizeGL() {
+    if (!gl) return;
+    const rect = artboard.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = Math.max(1, Math.round(rect.width * dpr));
+    const h = Math.max(1, Math.round(rect.height * dpr));
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+    }
+    gl.viewport(0, 0, w, h);
+  }
+
+  function buildBridgeCurves(t) {
+    const rect = artboard.getBoundingClientRect();
+    if (rect.width < 10 || rect.height < 10) return new Float32Array(0);
+    const cards = Array.from(colRightEl.querySelectorAll(".bridge-card"));
+    const originEl = colLeftEl.querySelector(".stacked-numeral");
+    if (!originEl || !cards.length) return new Float32Array(0);
+
+    const oRect = originEl.getBoundingClientRect();
+    const ox = ((oRect.left + oRect.width * 0.72 - rect.left) / rect.width) * 2 - 1;
+    const oy = 1 - ((oRect.top + oRect.height * 0.52 - rect.top) / rect.height) * 2;
+
+    const verts = [];
+    cards.forEach((card, idx) => {
+      const cRect = card.getBoundingClientRect();
+      const tx = ((cRect.left - rect.left) / rect.width) * 2 - 1;
+      const ty = 1 - ((cRect.top + cRect.height * 0.5 - rect.top) / rect.height) * 2;
+      const cx = (ox + tx) * 0.5;
+      const cy = Math.max(oy, ty) + 0.16 + idx * 0.06;
+      const isHot = hoveredBridgeIdx === idx;
+      const baseAlpha = isHot ? 0.72 : 0.38;
+      const pulsePos = (t * 0.45 + idx * 0.37) % 1.0;
+
+      const steps = 28;
+      for (let i = 0; i < steps; i++) {
+        const u0 = i / steps;
+        const u1 = (i + 1) / steps;
+        const x0 = (1-u0)*(1-u0)*ox + 2*(1-u0)*u0*cx + u0*u0*tx;
+        const y0 = (1-u0)*(1-u0)*oy + 2*(1-u0)*u0*cy + u0*u0*ty;
+        const x1 = (1-u1)*(1-u1)*ox + 2*(1-u1)*u1*cx + u1*u1*tx;
+        const y1 = (1-u1)*(1-u1)*oy + 2*(1-u1)*u1*cy + u1*u1*ty;
+
+        const dPulse = Math.abs(u0 - pulsePos);
+        const pulse = Math.exp(-dPulse * dPulse * 95.0) * (isHot ? 0.55 : 0.42);
+        verts.push(x0, y0, baseAlpha + pulse, x1, y1, baseAlpha + pulse);
+        verts.push(x0, y0 + 0.004, (baseAlpha + pulse) * 0.55, x1, y1 + 0.004, (baseAlpha + pulse) * 0.55);
+      }
+    });
+    return new Float32Array(verts);
+  }
+
+  function renderGL(now) {
+    if (!gl || !bgProg) return;
+    resizeGL();
+    const t = now * 0.001;
+    let wipe = -1.0;
+    if (wipeStart >= 0) {
+      const elapsed = (now - wipeStart) / 550.0;
+      if (elapsed <= 1.2) wipe = elapsed;
+      else wipeStart = -1;
+    }
+
+    gl.useProgram(bgProg);
+    gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+    const aPos = gl.getAttribLocation(bgProg, "a_pos");
+    gl.enableVertexAttribArray(aPos);
+    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+    gl.uniform1f(gl.getUniformLocation(bgProg, "u_time"), t);
+    gl.uniform2f(gl.getUniformLocation(bgProg, "u_res"), canvas.width, canvas.height);
+    gl.uniform2f(gl.getUniformLocation(bgProg, "u_mouse"), pointer.x, pointer.y);
+    gl.uniform1f(gl.getUniformLocation(bgProg, "u_theme"), theme === "umber" ? 1.0 : 0.0);
+    gl.uniform1f(gl.getUniformLocation(bgProg, "u_wipe"), wipe);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+    const curveData = buildBridgeCurves(t);
+    if (curveData.length > 0) {
+      gl.useProgram(lineProg);
+      gl.bindBuffer(gl.ARRAY_BUFFER, lineBuf);
+      gl.bufferData(gl.ARRAY_BUFFER, curveData, gl.DYNAMIC_DRAW);
+      const lPos = gl.getAttribLocation(lineProg, "a_pos");
+      const lAlpha = gl.getAttribLocation(lineProg, "a_alpha");
+      gl.enableVertexAttribArray(lPos);
+      gl.enableVertexAttribArray(lAlpha);
+      gl.vertexAttribPointer(lPos, 2, gl.FLOAT, false, 12, 0);
+      gl.vertexAttribPointer(lAlpha, 1, gl.FLOAT, false, 12, 8);
+      if (theme === "umber") {
+        gl.uniform3f(gl.getUniformLocation(lineProg, "u_color"), 0.902, 0.702, 0.239);
+      } else {
+        gl.uniform3f(gl.getUniformLocation(lineProg, "u_color"), 0.08, 0.07, 0.055);
+      }
+      gl.drawArrays(gl.LINES, 0, curveData.length / 3);
+    }
+  }
+
+  renderFilters();
+  renderActive();
+  renderIndex();
+
+  const glReady = initGL();
+  if (glReady) {
+    renderGL(performance.now());
+    function loop(now) {
+      renderGL(now);
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  }
+})();
+</script>
+</body>
+</html>

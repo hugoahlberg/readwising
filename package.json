@@ -1,0 +1,22 @@
+{
+  "name": "commonplace",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "fetch": "node scripts/fetch.mjs",
+    "embed": "node scripts/embed.mjs",
+    "graph": "node scripts/graph.mjs",
+    "data": "npm run fetch && npm run embed && npm run graph",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@huggingface/transformers": "^3.8.1",
+    "umap-js": "^1.4.0",
+    "vite": "^6.4.6"
+  },
+  "dependencies": {
+    "three": "^0.170.0"
+  }
+}

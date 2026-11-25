@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Commonplace — Field</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#efede6; --ink:#111; --mute:#7a776f; --faint:#d6d3c8; --red:#e5341d;
+  --m:32px; --g:20px; --top:64px;
+  --col:calc((100vw - 2*var(--m) - 11*var(--g)) / 12);
+  --rail:calc(var(--col)*3 + var(--g)*2);
+  --sans:"Inter Tight","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+body{overflow-x:hidden}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+.mono{font-family:var(--mono);font-size:11px;letter-spacing:.02em;text-transform:uppercase}
+
+/* ---------- top bar ---------- */
+#bar{position:fixed;z-index:20;top:0;left:0;right:0;height:var(--top);display:grid;
+  grid-template-columns:repeat(12,minmax(0,1fr));gap:var(--g);padding:0 var(--m);align-items:center;
+  border-bottom:1px solid transparent;transition:background .4s,border-color .4s}
+body.focus #bar{background:var(--paper);border-color:var(--ink)}
+#mark{grid-column:1/4;font-weight:600;font-size:17px;letter-spacing:-.01em;display:flex;gap:10px;align-items:center}
+#mark i{width:12px;height:12px;background:var(--red);display:inline-block}
+#nav{grid-column:4/7;display:flex;gap:18px}
+#nav a{color:var(--mute);text-decoration:none}
+#nav a.on{color:var(--ink)}
+#searchwrap{grid-column:7/11;position:relative}
+#q{width:100%;min-width:0;border:0;border-bottom:1px solid var(--ink);background:transparent;font:500 15px var(--sans);
+  padding:6px 0 6px 22px;outline:none;color:var(--ink)}
+#q::placeholder{color:var(--mute)}
+#searchwrap:before{content:"/";position:absolute;left:0;top:7px;font:500 12px var(--mono);color:var(--mute)}
+#count{grid-column:11/13;text-align:right;color:var(--mute)}
+
+/* ---------- map ---------- */
+#map{position:fixed;z-index:1;top:0;left:0;width:100vw;height:100vh;
+  transition:top .9s cubic-bezier(.75,0,.2,1),left .9s cubic-bezier(.75,0,.2,1),width .9s cubic-bezier(.75,0,.2,1),height .9s cubic-bezier(.75,0,.2,1)}
+body.focus #map{top:calc(var(--top) + 28px);left:calc(100vw - var(--m) - var(--rail));width:var(--rail);height:36vh;outline:1px solid var(--ink)}
+#gl{width:100%;height:100%;display:block;cursor:crosshair}
+#labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.tl{position:absolute;transform:translate(-50%,-50%);font:500 10px var(--mono);letter-spacing:.14em;color:var(--mute);white-space:nowrap;transition:opacity .4s}
+body.focus .tl{opacity:0}
+.rl{position:absolute;font:500 10px var(--mono);transform:translate(7px,-140%);white-space:nowrap}
+.rl.p{color:var(--red)}
+#maptag{position:absolute;left:8px;bottom:6px;color:var(--mute);opacity:0;transition:opacity .4s}
+body.focus #maptag{opacity:1}
+#tip{position:fixed;z-index:30;pointer-events:none;max-width:320px;background:var(--ink);color:var(--paper);
+  padding:10px 12px;font-size:13px;line-height:1.35;opacity:0;transform:translate(14px,14px);transition:opacity .15s}
+#tip .mono{color:#a9a69d;display:block;margin-top:6px;font-size:10px}
+
+/* ---------- idle overlay ---------- */
+#idle{position:fixed;z-index:5;top:calc(var(--top) + 40px);left:var(--m);width:calc(var(--col)*4 + var(--g)*3);
+  bottom:var(--m);display:flex;flex-direction:column;pointer-events:none;transition:opacity .5s,transform .6s}
+#idle > *{pointer-events:auto}
+body.focus #idle{opacity:0;transform:translateX(-24px);pointer-events:none}
+body.focus #idle > *{pointer-events:none}
+#idle h1{font-weight:500;font-size:clamp(34px,3.6vw,58px);line-height:1;letter-spacing:-.035em;margin:0 0 28px}
+#idle h1 em{font-style:normal;color:var(--red)}
+.legend{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;align-items:center;margin-bottom:auto;color:var(--mute)}
+.sw{width:22px;height:0;border-top:1px solid var(--ink)}
+.sw.p{border-color:var(--red);border-top-width:2px}
+.sw.sq{width:7px;height:7px;background:var(--ink);border:0}
+.sw.dot{width:3px;height:3px;border-radius:50%;background:var(--mute);border:0;margin-left:2px}
+#listhead{display:flex;justify-content:space-between;border-top:2px solid var(--red);padding-top:8px;margin-top:24px;color:var(--red)}
+#list{list-style:none;margin:0;padding:0;overflow:auto;max-height:40vh;background:color-mix(in srgb,var(--paper) 86%,transparent)}
+#list li{border-bottom:1px solid var(--faint)}
+#list button{display:grid;grid-template-columns:1fr auto;gap:2px 12px;text-align:left;width:100%;padding:10px 0}
+#list .pair{font-weight:500;font-size:15px;letter-spacing:-.01em}
+#list .pair b{color:var(--red);font-weight:500;padding:0 4px}
+#list .th{color:var(--mute);align-self:center}
+#list .sub{grid-column:1/-1;font-size:13px;color:var(--mute);line-height:1.35}
+#list button:hover .pair{text-decoration:underline;text-underline-offset:3px}
+#hint{position:fixed;z-index:5;right:var(--m);bottom:var(--m);color:var(--mute);text-align:right;line-height:1.7;transition:opacity .4s}
+body.focus #hint{opacity:0}
+
+/* ---------- focus ---------- */
+#focus{position:relative;z-index:4;padding:calc(var(--top) + 28px) var(--m) 120px;display:none}
+body.focus #focus{display:block}
+#main{width:calc(var(--col)*9 + var(--g)*8 - var(--g))}
+#over{display:flex;gap:14px;flex-wrap:wrap;align-items:baseline;border-top:2px solid var(--ink);padding-top:10px}
+#over .t{margin-left:auto;color:var(--mute)}
+#quote{font-weight:500;letter-spacing:-.028em;line-height:1.06;margin:40px 0 0;font-size:clamp(30px,4.1vw,66px);max-width:20em;text-wrap:pretty}
+#quote.long{font-size:clamp(26px,3.1vw,48px);line-height:1.1}
+#quote.xl{font-size:clamp(23px,2.5vw,38px);line-height:1.14}
+#quote .q{display:inline}
+#note{margin:24px 0 0;max-width:36em;font-size:16px;line-height:1.45;padding-left:14px;border-left:2px solid var(--ink)}
+#src{margin-top:32px;font-size:17px;line-height:1.3}
+#src b{font-weight:600}
+#acts{display:flex;gap:22px;margin-top:22px;color:var(--mute);flex-wrap:wrap}
+#acts a,#acts button{color:var(--mute);text-decoration:none}
+#acts a:hover,#acts button:hover{color:var(--ink)}
+
+#rel{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--g);margin-top:88px}
+.colh{display:flex;justify-content:space-between;align-items:baseline;border-top:2px solid var(--ink);padding:10px 0 4px}
+.colh h2{margin:0;font-weight:500;font-size:28px;letter-spacing:-.025em}
+.colh .mono{color:var(--mute)}
+.colh.p{border-color:var(--red)}
+.colh.p h2{color:var(--red)}
+.card{border-top:1px solid var(--faint);padding:16px 0 20px;cursor:pointer;animation:rise .55s cubic-bezier(.2,.7,.2,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}}
+.card .meta{display:flex;gap:10px;color:var(--mute);margin-bottom:10px}
+.card .meta .n{color:var(--ink)}
+.p .card .meta .n,.card.p .meta .n{color:var(--red)}
+.card blockquote{margin:0;font-size:19px;line-height:1.3;letter-spacing:-.012em;font-weight:500}
+.card .s{margin-top:8px;font-size:13px;color:var(--mute)}
+.card .why{margin:12px 0 0;font-size:14px;line-height:1.42;max-width:34em}
+.card .why:before{content:"→ ";color:var(--mute)}
+.card .both{margin:10px 0 0;font-size:14px;line-height:1.42;padding:10px 12px;background:color-mix(in srgb,var(--red) 8%,var(--paper));max-width:34em}
+.card .both b{font:500 10.5px var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--red);display:block;margin-bottom:4px}
+.card:hover blockquote{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:4px}
+.empty{border:1px dashed var(--red);padding:18px;margin-top:14px;font-size:15px;line-height:1.4}
+.empty a{color:var(--red)}
+#far{margin-top:64px;border-top:1px solid var(--ink);padding-top:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:var(--g)}
+#far .mono{grid-column:1/-1;color:var(--mute)}
+#far button{text-align:left;font-size:14px;line-height:1.35;color:var(--ink)}
+#far button span{display:block;color:var(--mute);font-size:12px;margin-top:4px}
+#far button:hover{text-decoration:underline}
+
+#rail{position:fixed;z-index:4;right:var(--m);width:var(--rail);top:calc(var(--top) + 28px + 36vh + 28px);bottom:var(--m);display:none;flex-direction:column}
+body.focus #rail{display:flex}
+#rail .mono{color:var(--mute)}
+#trail{list-style:none;margin:8px 0 0;padding:0;border-top:1px solid var(--ink);overflow:auto}
+#trail li{display:grid;grid-template-columns:28px 1fr;padding:8px 0;border-bottom:1px solid var(--faint);font-size:13px;line-height:1.3;cursor:pointer}
+#trail li .mono{padding-top:2px}
+#trail li.cur{font-weight:600}
+#trail li.cur .mono{color:var(--red)}
+#trail li:hover span:last-child{text-decoration:underline}
+#railfoot{margin-top:auto;padding-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:6px;color:var(--mute)}
+
+@media (max-width:860px){
+  :root{--m:16px;--g:12px}
+  #nav,#count{display:none}
+  #mark{grid-column:1/6}
+  #searchwrap{grid-column:6/13}
+  #idle{width:auto;right:var(--m)}
+  #idle .legend{display:none}
+  #list{max-height:34vh}
+  #hint{display:none}
+  body.focus #map{left:var(--m);width:calc(100vw - 2*var(--m));height:24vh;top:calc(var(--top) + 12px)}
+  #focus{padding-top:calc(var(--top) + 24vh + 36px)}
+  #main{width:auto}
+  #rel{grid-template-columns:1fr}
+  #far{grid-template-columns:1fr}
+  #rail{display:none!important}
+  #quote{margin-top:24px}
+}
+</style>
+</head>
+<body>
+<header id="bar">
+  <div id="mark"><i></i>Commonplace</div>
+  <nav id="nav" class="mono"><a class="on" href="04-field.html">Field</a><a href="05-spectrum.html">Index</a></nav>
+  <div id="searchwrap"><input id="q" placeholder="Search 7,252 highlights" autocomplete="off" spellcheck="false"></div>
+  <div id="count" class="mono"></div>
+</header>
+
+<div id="map"><canvas id="gl"></canvas><div id="labels"></div><div id="maptag" class="mono">You are here</div></div>
+<div id="tip"></div>
+
+<section id="idle">
+  <h1>Everything I've highlighted, <em>and where it disagrees with itself.</em></h1>
+  <div class="legend mono">
+    <span class="sw sq"></span><span>Highlight with connections</span>
+    <span class="sw dot"></span><span>The rest of the library</span>
+    <span class="sw"></span><span>Resonates</span>
+    <span class="sw p"></span><span>Pushes back</span>
+  </div>
+  <div id="listhead" class="mono"><span id="listtitle">Tensions worth sitting with</span><span id="listn"></span></div>
+  <ul id="list"></ul>
+</section>
+<div id="hint" class="mono">Drag to pan · Scroll to zoom<br>/ Search · R Random · Esc Back</div>
+
+<section id="focus">
+  <div id="main">
+    <div id="over" class="mono"></div>
+    <h1 id="quote"></h1>
+    <div id="note" hidden></div>
+    <div id="src"></div>
+    <div id="acts" class="mono"></div>
+    <div id="rel">
+      <div><div class="colh"><h2>Resonates</h2><span class="mono" id="nres"></span></div><div id="res"></div></div>
+      <div class="p"><div class="colh p"><h2>Pushes back</h2><span class="mono" id="npush"></span></div><div id="push"></div></div>
+    </div>
+    <div id="far"></div>
+  </div>
+</section>
+<aside id="rail">
+  <span class="mono">Train of thought</span>
+  <ol id="trail"></ol>
+  <div id="railfoot" class="mono"><span>← → Step</span><span>Esc Field</span></div>
+</aside>
+
+<script>if (/still/.test(location.search)) document.write('<style>*,*:before{transition:none!important;animation:none!important}</style>')</script>
+<script>window.COMMONPLACE = {"total": 7252, "themes": {"AGENCY": [-0.55, 0.38], "ACTION": [0.05, 0.62], "TRADITION": [0.62, 0.42], "ENOUGH": [-0.62, -0.3], "UNCERTAINTY": [0.4, -0.05], "ATTENTION": [0.66, -0.52], "EQUANIMITY": [-0.1, -0.58], "PERCEPTION": [0.05, 0.05]}, "items": [{"id": "a1", "rw": 1000655420, "text": "There is a lack of agency here—a feeling that you have little control over your life and a willingness to blame everyone but yourself.", "note": "", "src": "Hillbilly Elegy", "au": "J. D. Vance", "cat": "BK", "theme": "AGENCY", "date": "", "voice": null, "x": -0.5717, "y": 0.4235}, {"id": "a2", "rw": 1043102942, "text": "Agentic people do not wait for miraculous saves. They name out loud the problems facing them.", "note": "", "src": "You Can Just Do Things", "au": "Cate Hall, Sasha Chapin", "cat": "BK", "theme": "AGENCY", "date": "2026-08-11", "voice": null, "x": -0.5692, "y": 0.3532}, {"id": "a3", "rw": 1000655421, "text": "The old adage says that it’s better to be lucky than good. Apparently having the right network is better than both.", "note": "", "src": "Hillbilly Elegy", "au": "J. D. Vance", "cat": "BK", "theme": "AGENCY", "date": "", "voice": null, "x": -0.6291, "y": 0.3619}, {"id": "a4", "rw": 1026759958, "text": "Luck isn’t a constant, it increases with surface area: be in the right places, have lots of conversations, put yourself out there, ask for what you want and be optimistic and positive.", "note": "", "src": "Principles", "au": "Nabeel S. Qureshi", "cat": "AR", "theme": "AGENCY", "date": "2026-06-19", "voice": null, "x": -0.4555, "y": 0.4161}, {"id": "a5", "rw": 1055636496, "text": "Every advance in the complexity of the economy puts an added premium upon superior ability, and intensifies the concentration of wealth, responsibility, and political power.", "note": "", "src": "The Lessons of History", "au": "Will Durant and Ariel Durant", "cat": "BK", "theme": "AGENCY", "date": "", "voice": null, "x": -0.4619, "y": 0.4012}, {"id": "a6", "rw": 1000655416, "text": "“The best way to look at this might be to recognize that you probably can’t fix these things. They’ll always be around. But maybe you can put your thumb on the scale a little for the people at the margins.”", "note": "", "src": "Hillbilly Elegy", "au": "J. D. Vance", "cat": "BK", "theme": "AGENCY", "date": "", "voice": null, "x": -0.5164, "y": 0.3958}, {"id": "a7", "rw": 1000655419, "text": "“Never be like these fucking losers who think the deck is stacked against them,” my grandma often told me. “You can do anything you want to.”", "note": "", "src": "Hillbilly Elegy", "au": "J. D. Vance", "cat": "BK", "theme": "AGENCY", "date": "", "voice": null, "x": -0.6916, "y": 0.4527}, {"id": "a8", "rw": 1000655424, "text": "I don’t know what the answer is, precisely, but I know it starts when we stop blaming Obama or Bush or faceless companies and ask ourselves what we can do to make things better.", "note": "", "src": "Hillbilly Elegy", "au": "J. D. Vance", "cat": "BK", "theme": "AGENCY", "date": "", "voice": null, "x": -0.507, "y": 0.4224}, {"id": "a9", "rw": 1047171520, "text": "When making bold asks, keep in mind that agency is all about breaking through the *fictitious* barriers of your life and only letting yourself be limited by real barriers. A firm no is an actual barrier. Show respect for that, and tell yourself that you are now that much more aware of another limit, and free to pursue another ask.", "note": "", "src": "You Can Just Do Things", "au": "Cate Hall, Sasha Chapin", "cat": "BK", "theme": "AGENCY", "date": "2026-08-23", "voice": null, "x": -0.6938, "y": 0.2318}, {"id": "a10", "rw": 1026759945, "text": "Once you are ok with people telling you ‘no’, you can ask for whatever you want. (Make reality say no to you.)", "note": "", "src": "Principles", "au": "Nabeel S. Qureshi", "cat": "AR", "theme": "AGENCY", "date": "2026-06-19", "voice": null, "x": -0.6256, "y": 0.3402}, {"id": "b1", "rw": 1073252822, "text": "Figure out a good-enough next step and execute it. If you’re trying to get healthy, drinking a glass of water and going for a walk will serve you much better than spending time researching obscure details about nutrition and exercise. This applies to practically everything.", "note": "", "src": "talking points (2021)", "au": "Visakan Veerasamy", "cat": "AR", "theme": "ACTION", "date": "2026-11-13", "voice": null, "x": 0.076, "y": 0.6161}, {"id": "b2", "rw": 1026759948, "text": "Do things fast. Things don’t actually take much time (as measured by a stopwatch); resistance/procrastination does. “Slow is fake”. If no urgency exists, impose some.", "note": "", "src": "Principles", "au": "Nabeel S. Qureshi", "cat": "AR", "theme": "ACTION", "date": "2026-06-19", "voice": null, "x": 0.0943, "y": 0.5654}, {"id": "b3", "rw": 1063294679, "text": "”More information is just a form of procrastination.” —Russ Roberts", "note": "", "src": "Pessimism Always Sounds Smarter Than Optimism.", "au": "Morgan Housel", "cat": "AR", "theme": "ACTION", "date": "2026-10-12", "voice": "Russ Roberts", "x": 0.0762, "y": 0.6535}, {"id": "b4", "rw": 987603997, "text": "Cultivate the habit of surveying and testing a prospective action before undertaking it. Before you proceed, step back and look at the big picture, lest you act rashly on raw impulse. Determine what happens first, consider what that leads to, and then act in accordance with what you’ve learned.", "note": "", "src": "The Art of Living", "au": "Epictetus and Sharon Lebell", "cat": "BK", "theme": "ACTION", "date": "", "voice": null, "x": -0.0062, "y": 0.766}, {"id": "b5", "rw": 1055636482, "text": "In a strategy that entails ruin, benefits never offset risks of ruin.", "note": "", "src": "Skin in the Game", "au": "Nassim Nicholas Taleb", "cat": "BK", "theme": "ACTION", "date": "", "voice": null, "x": 0.0973, "y": 0.7217}, {"id": "b6", "rw": 1037536433, "text": "We monumentalize the trivial Researchers have discovered that when even a simple decision becomes hard work, the decision maker tends to magnify it in their minds. And when someone sees a decision as increasingly important, they expend more energy on it. It’s an endless loop that causes paralysis.", "note": "", "src": "The Decision Checklist", "au": "Sam Kyle", "cat": "BK", "theme": "ACTION", "date": "", "voice": null, "x": -0.0027, "y": 0.5571}, {"id": "b7", "rw": 1011471843, "text": "A key point to bear in mind: The value of attentiveness varies in proportion to its object. You’re better off not giving the small things more time than they deserve.", "note": "", "src": "Meditations", "au": "Marcus Aurelius", "cat": "BK", "theme": "ACTION", "date": "", "voice": null, "x": 0.0208, "y": 0.611}, {"id": "b8", "rw": 987603993, "text": "To do anything well you must have the humility to bumble around a bit, to follow your nose, to get lost, to goof. Have the courage to try an undertaking and possibly do it poorly. Unremarkable lives are marked by the fear of not looking capable when trying something new.", "note": "", "src": "The Art of Living", "au": "Epictetus and Sharon Lebell", "cat": "BK", "theme": "ACTION", "date": "", "voice": null, "x": 0.1037, "y": 0.6411}, {"id": "b9", "rw": 1037536441, "text": "\"Life can only be understood backwards; but it must be lived forwards.\"", "note": "", "src": "The Decision Checklist", "au": "Sam Kyle", "cat": "BK", "theme": "ACTION", "date": "", "voice": "Søren Kierkegaard", "x": 0.012, "y": 0.5387}, {"id": "b10", "rw": 1032236072, "text": "Historian Cyril Northcote Parkinson coined a thing called Parkinson’s Law of Triviality. It states: “The amount of attention a problem gets is the inverse of its importance.”", "note": "", "src": "The Art of Spending Money", "au": "Morgan Housel", "cat": "BK", "theme": "ACTION", "date": "2026-07-01", "voice": "C. Northcote Parkinson", "x": 0.0057, "y": 0.7238}, {"id": "c1", "rw": 1055636490, "text": "No one man, however brilliant or well-informed, can come in one lifetime to such fullness of understanding as to safely judge and dismiss the customs or institutions of his society, for these are the wisdom of generations after centuries of experiment in the laboratory of history.", "note": "", "src": "The Lessons of History", "au": "Will Durant and Ariel Durant", "cat": "BK", "theme": "TRADITION", "date": "", "voice": null, "x": 0.5513, "y": 0.4408}, {"id": "c2", "rw": 980358188, "text": "The reasonable man adapts himself to the world: the unreasonable one persists in trying to adapt the world to himself. Therefore all progress depends on the unreasonable man. —George Bernard Shaw", "note": "", "src": "In This Economy?", "au": "Kyla Scanlon and Morgan Housel", "cat": "BK", "theme": "TRADITION", "date": "2026-01-21", "voice": "George Bernard Shaw", "x": 0.6563, "y": 0.2934}, {"id": "c3", "rw": 1029721245, "text": "We are silencing dissent - outside and within - forgetting that dissent is the engine of progress. If we fail to engage with the other side, we lose all the benefits their different ideas bring to ours. We turn politics into a zero-sum game rather than one in which everyone gains from the competition of opposing ideas and debate. Silencing dissent is a form of selfharm.", "note": "", "src": "Why We Think What We Think", "au": "Unknown author", "cat": "BK", "theme": "TRADITION", "date": "2026-06-28", "voice": null, "x": 0.6241, "y": 0.531}, {"id": "c4", "rw": 1026759956, "text": "Stop asking for approval and permission from others. School and work trains people to have this mindset. Instead, figure out what you want to do, and plant the “this is happening” flag. People will come along for the ride.", "note": "", "src": "Principles", "au": "Nabeel S. Qureshi", "cat": "AR", "theme": "TRADITION", "date": "2026-06-19", "voice": null, "x": 0.4488, "y": 0.3927}, {"id": "c5", "rw": 1055636497, "text": "There is no significant example in history, before our time, of a society successfully maintaining moral life without the aid of religion.", "note": "", "src": "The Lessons of History", "au": "Will Durant and Ariel Durant", "cat": "BK", "theme": "TRADITION", "date": "", "voice": null, "x": 0.611, "y": 0.3505}, {"id": "c6", "rw": 1067352985, "text": "MIT economist Jonathan Gruber even found that the relationship was causal: It’s not just that people who happen to live successful lives also go to church, it’s that church seems to promote good habits.", "note": "", "src": "Hillbilly Elegy", "au": "J. D. Vance", "cat": "BK", "theme": "TRADITION", "date": "", "voice": null, "x": 0.6623, "y": 0.4147}, {"id": "c7", "rw": 1055636489, "text": "Nature and history do not agree with our conceptions of good and bad; they define good as that which survives, and bad as that which goes under; and the universe has no prejudice in favor of Christ as against Genghis Khan.", "note": "", "src": "The Lessons of History", "au": "Will Durant and Ariel Durant", "cat": "BK", "theme": "TRADITION", "date": "", "voice": null, "x": 0.4955, "y": 0.4904}, {"id": "c8", "rw": 1042558086, "text": "It seems plausible that our core political and moral instincts on either of the spectrum might provide natural advantages to society at least some of the time because otherwise they would have been 'evolved out'. When a trait is more adaptive to our circumstances it will eventually become universal. Evolution is brutal like that.", "note": "", "src": "Why We Think What We Think", "au": "Unknown author", "cat": "BK", "theme": "TRADITION", "date": "2026-08-09", "voice": null, "x": 0.6769, "y": 0.5004}, {"id": "c9", "rw": 1055636479, "text": "Consider that English “manners” were imposed on the middle class as a way of domesticating them, along with instilling in them the fear of breaking rules and violating social norms.", "note": "", "src": "Skin in the Game", "au": "Nassim Nicholas Taleb", "cat": "BK", "theme": "TRADITION", "date": "", "voice": null, "x": 0.7425, "y": 0.4508}, {"id": "d1", "rw": 1019625029, "text": "The best measure of wealth is what you have minus what you want.", "note": "", "src": "The Art of Spending Money", "au": "Morgan Housel", "cat": "BK", "theme": "ENOUGH", "date": "2026-05-27", "voice": null, "x": -0.6099, "y": -0.4104}, {"id": "d2", "rw": 1011471841, "text": "The way he handled the material comforts that fortune had supplied him in such abundance—without arrogance and without apology. If they were there, he took advantage of them. If not, he didn’t miss them.", "note": "", "src": "Meditations", "au": "Marcus Aurelius", "cat": "BK", "theme": "ENOUGH", "date": "", "voice": null, "x": -0.5677, "y": -0.352}, {"id": "d3", "rw": 987603992, "text": "Do your best to rein in your desire. For if you desire something that isn’t within your own control, disappointment will surely follow; meanwhile, you will be neglecting the very things that are within your control that are worthy of desire.", "note": "", "src": "The Art of Living", "au": "Epictetus and Sharon Lebell", "cat": "BK", "theme": "ENOUGH", "date": "", "voice": null, "x": -0.6585, "y": -0.4075}, {"id": "d4", "rw": 1024942533, "text": "In his book, Die with Zero, Bill Perkins writes: Imagine if, by the time you died, you had done everything you were told to do: you worked hard, saved your money, and looked forward to financial freedom when you retired. The only thing you wasted along the way was…your life.", "note": "", "src": "The Art of Spending Money", "au": "Morgan Housel", "cat": "BK", "theme": "ENOUGH", "date": "2026-06-12", "voice": "Bill Perkins", "x": -0.7022, "y": -0.3451}, {"id": "d5", "rw": 1073251583, "text": "Set aside 5% of the cash you earn after taxes, and put it in a bank account called “fun money.” Don’t invest it. Spend it recklessly on things you want to do, and don’t make yourself justify that spending.", "note": "", "src": "28 Pieces of Life Advice", "au": "David Perell", "cat": "AR", "theme": "ENOUGH", "date": "2026-11-13", "voice": null, "x": -0.5104, "y": -0.4727}, {"id": "d6", "rw": 1073251590, "text": "Most of the pleasure in a dessert comes in the first three bites. After that, you should stop eating it. As a reward, you can eat dessert more often because you don’t binge it", "note": "", "src": "28 Pieces of Life Advice", "au": "David Perell", "cat": "AR", "theme": "ENOUGH", "date": "2026-11-13", "voice": null, "x": -0.7439, "y": -0.2797}, {"id": "d7", "rw": 1021764582, "text": "So much of being happy with your money is battling the hedonic treadmill—the ability to become accustomed to something you once considered a luxury. One way to fight back is respecting the idea that occasional treats can generate more joy than perpetual luxury.", "note": "", "src": "The Art of Spending Money", "au": "Morgan Housel", "cat": "BK", "theme": "ENOUGH", "date": "2026-06-02", "voice": null, "x": -0.4973, "y": -0.2508}, {"id": "d8", "rw": 1026759955, "text": "Don’t “slow down” as you get older, speed up. Lean into changes, be curious about new things. Most people seem to go the other way.", "note": "", "src": "Principles", "au": "Nabeel S. Qureshi", "cat": "AR", "theme": "ENOUGH", "date": "2026-06-19", "voice": null, "x": -0.7815, "y": -0.514}, {"id": "d9", "rw": 1024942536, "text": "One of my favorite writers, Lawrence Yeo, once wrote: Envy is inversely correlated with self-examination. The less you know yourself, the more you look to others to get an idea of your worth. But the more you delve into who you are, the less you seek from others, and the dissolution of envy begins.", "note": "", "src": "The Art of Spending Money", "au": "Morgan Housel", "cat": "BK", "theme": "ENOUGH", "date": "2026-06-12", "voice": "Nassim Taleb", "x": -0.5896, "y": -0.3626}, {"id": "d10", "rw": 1055636486, "text": "Courage (risk taking) is the highest virtue. We need entrepreneurs.", "note": "", "src": "Skin in the Game", "au": "Nassim Nicholas Taleb", "cat": "BK", "theme": "ENOUGH", "date": "", "voice": null, "x": -0.7152, "y": -0.2169}, {"id": "e1", "rw": 1031714351, "text": "In our era of uncertain uncertainty, certainty will be the killer. In this era more downfalls will happen because of overconfidence than questioning. The key is to not get stuck on just one option. You have to become at ease holding multiple contradictory possibilities at once.", "note": "", "src": "Our Uncertain Uncertainties", "au": "Kevin Kelly", "cat": "AR", "theme": "UNCERTAINTY", "date": "2026-07-05", "voice": null, "x": 0.4937, "y": -0.0366}, {"id": "e2", "rw": 1032236071, "text": "Author Rory Sutherland writes, “The opposite of a good idea can also be a good idea.”", "note": "", "src": "The Art of Spending Money", "au": "Morgan Housel", "cat": "BK", "theme": "UNCERTAINTY", "date": "2026-07-01", "voice": "Rory Sutherland", "x": 0.4209, "y": -0.0131}, {"id": "e3", "rw": 1037536440, "text": "When we’re looking back on our decisions, we need to focus on what’s the same, not what’s different. “This time is different” are the four most dangerous words when it comes to making better decisions.", "note": "", "src": "The Decision Checklist", "au": "Sam Kyle", "cat": "BK", "theme": "UNCERTAINTY", "date": "", "voice": null, "x": 0.5355, "y": 0.0026}, {"id": "e4", "rw": 978030847, "text": "I’ve been writing code for 15 years. In that time, I internalized a simple truth: ideas are cheap, execution is everything. The ability to actually build something—to turn a napkin sketch into working software—was the thing that separated dreamers from builders. It’s what made you valuable. That truth no longer holds.", "note": "", "src": "Ideas Are Cheap, Execution Is Cheaper", "au": "davekiss.com", "cat": "AR", "theme": "UNCERTAINTY", "date": "2026-01-15", "voice": null, "x": 0.4441, "y": -0.0034}, {"id": "e5", "rw": 1019625021, "text": "The software engineer Billy Markus says, “People are not rational. They are rationalizing. Once you understand this simple fact, all the oddest human behavior will suddenly make way more sense.”", "note": "", "src": "The Art of Spending Money", "au": "Morgan Housel", "cat": "BK", "theme": "PERCEPTION", "date": "2026-05-27", "voice": "Billy Markus", "x": -0.0833, "y": 0.1589}, {"id": "e6", "rw": 1066993121, "text": "“People's opinions are mainly designed to make them feel comfortable; truth, for most people is a secondary consideration.” ― Bertrand Russell", "note": "", "src": "The Creative Act, the Open Channel and Learning.", "au": "RAVI SHAH", "cat": "AR", "theme": "PERCEPTION", "date": "2026-10-25", "voice": "Bertrand Russell", "x": 0.1312, "y": 0.095}, {"id": "e7", "rw": 1043100290, "text": "What potentially true facts about the world do you refuse to consider because knowing them might require you to change your behavior?", "note": "", "src": "You Can Just Do Things", "au": "Cate Hall, Sasha Chapin", "cat": "BK", "theme": "PERCEPTION", "date": "2026-08-11", "voice": null, "x": -0.1178, "y": -0.0039}, {"id": "e8", "rw": 971594557, "text": "After Donald Trump was elected US president, he accused Germany of being a prisoner of Russia due to its growing gas dependence and the construction of the Nord Stream pipeline. Due to the anti-Trump mood in Germany, his statement was not taken seriously. But, on this point, Trump was right.", "note": "", "src": "Kaput", "au": "Wolfgang Münchau", "cat": "BK", "theme": "PERCEPTION", "date": "2025-12-30", "voice": null, "x": 0.1216, "y": -0.104}, {"id": "e9", "rw": 1073253431, "text": "Being kind makes you smarter. People trust you more when you’re genuinely kind. They’re likelier to share their more tentative thoughts and privileged knowledge of contentious things. Being unkind traps you in arrested development, and you’ll always be lagging behind.", "note": "", "src": "talking points (2021)", "au": "Visakan Veerasamy", "cat": "AR", "theme": "PERCEPTION", "date": "2026-11-13", "voice": null, "x": 0.0344, "y": 0.1367}, {"id": "e10", "rw": 1019625022, "text": "Author David McRaney notes that “consensus realities are mostly the result of geography.”", "note": "", "src": "The Art of Spending Money", "au": "Morgan Housel", "cat": "BK", "theme": "PERCEPTION", "date": "2026-05-27", "voice": "David McRaney", "x": -0.0615, "y": 0.1869}, {"id": "f1", "rw": 1041095748, "text": "Cultivating a human mind works the same way. You have to keep some stuff out (lies, noise, fear) and some stuff in (knowledge, experience, love). You can’t grow your mind directly; you don’t get smarter by yanking on your frontal lobe. All you can do is create the right environment and hope your brain-folds get deeper.", "note": "", "src": "Reading the News Is the New Smoking", "au": "Adam Mastroianni", "cat": "AR", "theme": "ATTENTION", "date": "2026-08-05", "voice": null, "x": 0.7069, "y": -0.5328}, {"id": "f2", "rw": 1019048734, "text": "As Krista Tippett, the host of the podcast On Being, put it, “I don’t actually think we are equipped…to be delivered catastrophic and confusing news and pictures, 24/7. We are analog creatures in a digital world.”", "note": "", "src": "In This Economy?", "au": "Kyla Scanlon and Morgan Housel", "cat": "BK", "theme": "ATTENTION", "date": "2026-05-19", "voice": "Krista Tippett", "x": 0.6876, "y": -0.4648}, {"id": "f3", "rw": 1063294677, "text": "”Science gathers knowledge faster than society gathers wisdom.” —Isaac Asimov", "note": "", "src": "Pessimism Always Sounds Smarter Than Optimism.", "au": "Morgan Housel", "cat": "AR", "theme": "ATTENTION", "date": "2026-10-12", "voice": "Isaac Asimov", "x": 0.6702, "y": -0.4226}, {"id": "f4", "rw": 976268135, "text": "As the English author Hilary Mantel wrote in a 2017 Guardian piece on facts, history, and truth, “Evidence is always partial. Facts are not truth, though they are part of it—information is not knowledge. And history is not the past—it is the method we have evolved of organising our ignorance of the past. It’s the record of what’s left on the record.”", "note": "", "src": "In This Economy?", "au": "Kyla Scanlon and Morgan Housel", "cat": "BK", "theme": "ATTENTION", "date": "2026-01-05", "voice": "Hilary Mantel", "x": 0.6038, "y": -0.5553}, {"id": "f5", "rw": 1021764588, "text": "My friend David Perell once wrote: The people I admire most have a way of escaping the bubble of culture. Sometimes via religion; sometimes via old books; sometimes via time in nature. Without such an escape, propaganda wins. You stop thinking for yourself. Modern delusions grow into an all-consuming mind virus.", "note": "", "src": "The Art of Spending Money", "au": "Morgan Housel", "cat": "BK", "theme": "ATTENTION", "date": "2026-06-02", "voice": "David Perell", "x": 0.7485, "y": -0.5177}, {"id": "f6", "rw": 1019048730, "text": "The amount of energy needed to refute bullshit is an order of magnitude bigger than to produce it. —Alberto Brandolini", "note": "", "src": "In This Economy?", "au": "Kyla Scanlon and Morgan Housel", "cat": "BK", "theme": "ATTENTION", "date": "2026-05-19", "voice": "Alberto Brandolini", "x": 0.5852, "y": -0.4396}, {"id": "g1", "rw": 1011471839, "text": "The tranquillity that comes when you stop caring what they say. Or think, or do. Only what you do. (Is this fair? Is this the right thing to do?) <…> not to be distracted by their darkness. To run straight for the finish line, unswerving.", "note": "", "src": "Meditations", "au": "Marcus Aurelius", "cat": "BK", "theme": "EQUANIMITY", "date": "", "voice": null, "x": 0.0246, "y": -0.6178}, {"id": "g2", "rw": 1067796572, "text": "Lt. Heather “Lucky” Penney, F-16 pilot, D.C. Air National Guard: This sounds counterintuitive, but when the magnitude of the situation hit me, I really lost all emotion. I was really much more focused on What are the things I need to do to enable us to protect our capital? What are the things I need to do to facilitate us getting airborne?", "note": "", "src": "The Only Plane in the Sky: An Oral History of 9/11", "au": "Garrett M. Graff", "cat": "BK", "theme": "EQUANIMITY", "date": "2026-10-28", "voice": null, "x": -0.2173, "y": -0.5915}, {"id": "g3", "rw": 987603990, "text": "Small-minded people habitually reproach others for their own misfortunes. Average people reproach themselves. Those who are dedicated to a life of wisdom understand that the impulse to blame something or someone is foolishness, that there is nothing to be gained in blaming, whether it be others or oneself.", "note": "", "src": "The Art of Living", "au": "Epictetus and Sharon Lebell", "cat": "BK", "theme": "EQUANIMITY", "date": "", "voice": null, "x": -0.1127, "y": -0.6053}, {"id": "g4", "rw": 983023270, "text": "There are more things … likely to frighten us than there are to crush us; we suffer more often in imagination than in reality.", "note": "", "src": "A Stoic’s Key to Peace of Mind: Seneca on the Antidote to Anxiety", "au": "Maria Popova", "cat": "AR", "theme": "EQUANIMITY", "date": "2026-01-29", "voice": null, "x": 0.0194, "y": -0.6673}, {"id": "g5", "rw": 1050818463, "text": "The lessons we learn from getting burned emotionally outlive the original situations where they were useful.", "note": "", "src": "You Can Just Do Things", "au": "Cate Hall, Sasha Chapin", "cat": "BK", "theme": "EQUANIMITY", "date": "2026-09-03", "voice": null, "x": 0.0071, "y": -0.6878}, {"id": "g6", "rw": 1019048732, "text": "As George Saunders wrote in Congratulations, by the Way: Some Thoughts on Kindness, “Find out what makes you kinder, what opens you up and brings out the most loving, generous, and unafraid version of you—and go after those things as if nothing else matters. Because, actually, nothing else does.”", "note": "", "src": "In This Economy?", "au": "Kyla Scanlon and Morgan Housel", "cat": "BK", "theme": "EQUANIMITY", "date": "2026-05-19", "voice": "George Saunders", "x": -0.1669, "y": -0.5263}, {"id": "g7", "rw": 987603995, "text": "Instead of averting your eyes from the painful events of life, look at them squarely and contemplate them often. By facing the realities of death, infirmity, loss, and disappointment, you free yourself of illusions and false hopes and you avoid miserable, envious thoughts.", "note": "", "src": "The Art of Living", "au": "Epictetus and Sharon Lebell", "cat": "BK", "theme": "EQUANIMITY", "date": "", "voice": null, "x": -0.0041, "y": -0.507}, {"id": "g8", "rw": 1033679544, "text": "If someone tried to control your body, you'd fight for freedom. But how easily you hand over your mind to those who offend or insult you! By continually stewing over their misdeeds, you make them your master.", "note": "", "src": "The Manual", "au": "Sam Torode", "cat": "BK", "theme": "EQUANIMITY", "date": "2026-07-12", "voice": null, "x": -0.0707, "y": -0.5679}, {"id": "h1", "rw": 954875631, "text": "Americans expect innovations from scientists working at NASA, in universities, or in research labs. They celebrate the moment of invention: the first solar cell, the first personal computer, first in flight. In China, on the other hand, tech innovation emerges from the factory floor, when a new product is scaled up into mass production.", "note": "", "src": "Breakneck", "au": "Dan Wang", "cat": "BK", "theme": "UNCERTAINTY", "date": "2025-11-06", "voice": null, "x": 0.413, "y": -0.0011}, {"id": "h2", "rw": 960430237, "text": "Like me, the co-founder of Pixar, Ed Catmull, discovered late in life that he had aphantasia, and talked publicly about the curious relationship of visualization and creativity.", "note": "", "src": "Aphantasia and Mental Modeling", "au": "Hollis Robbins", "cat": "AR", "theme": "PERCEPTION", "date": "2025-11-24", "voice": null, "x": 0.035, "y": 0.0736}, {"id": "h3", "rw": 960429591, "text": "Most importantly, acknowledging the profound diversity in how humans construct their inner experience of reality might foster greater mutual understanding. When we recognize that our own cognitive architecture is just one possibility among many, rather than the default human experience, we open ourselves to better appreciating human consciousness in all its varied forms.", "note": "", "src": "Aphantasia and \"The Sixth Sense\"", "au": "Hollis Robbins", "cat": "AR", "theme": "PERCEPTION", "date": "2025-11-24", "voice": null, "x": 0.0987, "y": 0.0501}], "edges": [{"a": "a1", "b": "a2", "s": "echo", "why": "Both locate the failure in waiting to be rescued. Vance names it as a culture; Hall treats it as a habit you can break.", "both": null}, {"a": "a1", "b": "a3", "s": "contradict", "why": "Vance blames missing agency, then concedes in the same book that networks beat both luck and merit.", "both": "agency gets you to the door, and the network decides whether it opens."}, {"a": "a1", "b": "a5", "s": "contradict", "why": "Durant treats concentration as a structural law of complex economies, not a failure of individual will.", "both": "individuals can beat the trend while the trend still holds on average."}, {"a": "a1", "b": "a8", "s": "extend", "why": "Same book, the prescription: stop outsourcing blame to presidents and faceless companies.", "both": null}, {"a": "a1", "b": "g3", "s": "echo", "why": "A first-century Stoic and an Appalachian memoir reach the same diagnosis: blame is a way of handing away control.", "both": null}, {"a": "a2", "b": "a9", "s": "extend", "why": "The fictitious-versus-real barrier distinction is the operating manual for naming problems out loud.", "both": null}, {"a": "a2", "b": "a6", "s": "complicate", "why": "The Yale professor is humbler. You probably can't fix it; you can only put a thumb on the scale.", "both": "you act fully on what's in reach and expect the system to move by inches."}, {"a": "a3", "b": "a4", "s": "extend", "why": "Qureshi's answer to 'networks beat merit': manufacture luck by increasing your surface area.", "both": null}, {"a": "a4", "b": "a10", "s": "echo", "why": "Asking more is how surface area grows. Being fine with 'no' is the cost of entry.", "both": null}, {"a": "a9", "b": "a10", "s": "echo", "why": "Two writers, one move: make reality say no instead of saying it for yourself.", "both": null}, {"a": "a7", "b": "a3", "s": "complicate", "why": "Mamaw's 'you can do anything' sits right beside Vance's own evidence that who you know decides a lot.", "both": "believing in agency is useful precisely because it isn't entirely accurate."}, {"a": "a5", "b": "c7", "s": "echo", "why": "Durant twice: history is indifferent to fairness.", "both": null}, {"a": "b1", "b": "b2", "s": "echo", "why": "Two lists, one rule: bias toward the next step, not the perfect plan.", "both": null}, {"a": "b2", "b": "b3", "s": "echo", "why": "Research is a respectable-looking form of resistance.", "both": null}, {"a": "b2", "b": "b4", "s": "contradict", "why": "Epictetus asks for a deliberate pause to trace consequences before acting.", "both": "speed is for reversible decisions and deliberation for irreversible ones."}, {"a": "b2", "b": "b5", "s": "contradict", "why": "If the downside is ruin, no amount of speed or upside justifies the bet.", "both": "you move fast inside a strategy that can't kill you."}, {"a": "b1", "b": "b6", "s": "extend", "why": "Why good-enough works: hard decisions inflate their own importance until they stall you.", "both": null}, {"a": "b6", "b": "b7", "s": "echo", "why": "Marcus Aurelius anticipated decision-fatigue research by 1,800 years: attention should match its object.", "both": null}, {"a": "b6", "b": "b10", "s": "echo", "why": "Parkinson's Law of Triviality is the same loop seen from the outside.", "both": null}, {"a": "b8", "b": "b2", "s": "extend", "why": "Being willing to bumble is the emotional precondition for doing things fast.", "both": null}, {"a": "b9", "b": "b4", "s": "complicate", "why": "Kierkegaard puts a ceiling on deliberation: you only understand a decision after you've lived it.", "both": "you plan to the point of diminishing returns, then let the doing teach you."}, {"a": "b4", "b": "b5", "s": "echo", "why": "Both demand you trace the chain of consequences before committing.", "both": null}, {"a": "b3", "b": "f4", "s": "extend", "why": "Mantel explains why more information isn't the cure: information is not knowledge.", "both": null}, {"a": "c1", "b": "c2", "s": "contradict", "why": "Durant: no single mind can safely dismiss inherited customs. Shaw: all progress depends on the one who refuses to adapt.", "both": "most unreasonable people are wrong, and the few who aren't are why progress happens. Durant is describing the base rate; Shaw is describing the tail."}, {"a": "c1", "b": "c3", "s": "contradict", "why": "Dissent as the engine of progress, against custom as the accumulated result of experiment.", "both": "customs are the record of past dissents that survived."}, {"a": "c1", "b": "c5", "s": "extend", "why": "Religion is Durant's clearest case of a custom carrying generational wisdom.", "both": null}, {"a": "c5", "b": "c6", "s": "echo", "why": "A 1968 historian and an MIT economist make the same claim: church as habit infrastructure.", "both": null}, {"a": "c2", "b": "c4", "s": "echo", "why": "Plant the flag, and let the world adapt to you.", "both": null}, {"a": "c3", "b": "e9", "s": "extend", "why": "Kindness is what lets dissent be heard instead of punished.", "both": null}, {"a": "c7", "b": "c8", "s": "echo", "why": "What survives defines 'good': Durant on civilizations, evolutionary psychology on moral instincts.", "both": null}, {"a": "c8", "b": "c3", "s": "extend", "why": "If both political instincts survived evolution, silencing either side throws away an adaptation.", "both": null}, {"a": "c9", "b": "c4", "s": "extend", "why": "Taleb explains where the approval-seeking came from: norms designed to domesticate.", "both": null}, {"a": "c1", "b": "c9", "s": "contradict", "why": "Taleb reads custom as domestication by the powerful, not as distilled wisdom.", "both": "a custom can encode wisdom and serve power at the same time."}, {"a": "d1", "b": "d3", "s": "echo", "why": "Housel's equation is Epictetus' advice with a minus sign.", "both": null}, {"a": "d1", "b": "d2", "s": "echo", "why": "Use comfort when it's there and don't miss it when it isn't. Wanting little, from the emperor's side.", "both": null}, {"a": "d1", "b": "c2", "s": "contradict", "why": "Shaw's unreasonable man never lowers his wants. That's the whole point.", "both": "you're content with things and unreasonable about work."}, {"a": "d3", "b": "d10", "s": "contradict", "why": "Taleb ranks courage, meaning risk-taking, as the highest virtue. Epictetus counsels reining desire in.", "both": "you restrain your desire for outcomes and keep the courage for the attempt."}, {"a": "d4", "b": "d1", "s": "complicate", "why": "Perkins warns that too much restraint wastes the only resource that doesn't renew.", "both": "you want little, but spend on what you do want while you can still enjoy it."}, {"a": "d4", "b": "d5", "s": "echo", "why": "A fun-money account is Die with Zero in miniature.", "both": null}, {"a": "d6", "b": "d7", "s": "echo", "why": "The same law at two scales: the first three bites, the occasional treat.", "both": null}, {"a": "d7", "b": "d1", "s": "extend", "why": "Keep wants low and every treat registers as a surplus.", "both": null}, {"a": "d8", "b": "b2", "s": "echo", "why": "Speed as a stance on life, not just on tasks.", "both": null}, {"a": "d8", "b": "d3", "s": "complicate", "why": "Leaning into every new thing can be desire wearing curiosity's clothes.", "both": "curiosity is aimed at what's in your control: learning, not acquiring."}, {"a": "d9", "b": "b5", "s": "echo", "why": "Taleb twice: fragility scales with what you fear losing, and ruin can't be offset.", "both": null}, {"a": "d9", "b": "d10", "s": "complicate", "why": "The same author calls courage the highest virtue, yet says fragility grows with what you stand to lose.", "both": "you keep what you have to lose small, so you can afford to be brave."}, {"a": "e1", "b": "e2", "s": "echo", "why": "Holding contradictory ideas at once, from two directions.", "both": null}, {"a": "e1", "b": "e3", "s": "complicate", "why": "Kelly says prepare for unprecedented uncertainty. Kyle says 'this time is different' are the four most dangerous words.", "both": "you assume it's the same until evidence forces otherwise, then update fast."}, {"a": "e3", "b": "e4", "s": "contradict", "why": "An engineer with 15 years of code argues this time really is different: execution is no longer the moat.", "both": "base rates win most of the time, and the costly errors are the rare times they don't."}, {"a": "e4", "b": "h1", "s": "contradict", "why": "Wang shows execution, the factory floor, is exactly where China's innovation lives.", "both": "AI commoditizes software execution while physical execution stays scarce."}, {"a": "e5", "b": "e6", "s": "echo", "why": "Rationalizing, not rational. Comfort before truth.", "both": null}, {"a": "e6", "b": "e7", "s": "extend", "why": "Hall turns Russell's observation into a question you can actually ask yourself.", "both": null}, {"a": "e7", "b": "e8", "s": "extend", "why": "A worked example: a German economist conceding a point to a politician he plainly dislikes.", "both": null}, {"a": "e10", "b": "e5", "s": "echo", "why": "Beliefs follow geography, and the reasons arrive afterward.", "both": null}, {"a": "e10", "b": "c1", "s": "complicate", "why": "If consensus is mostly geography, inherited customs may encode location more than wisdom.", "both": "local customs are wise locally, and only there."}, {"a": "e2", "b": "c2", "s": "echo", "why": "The unreasonable idea is often just the opposite idea, tried.", "both": null}, {"a": "f1", "b": "f2", "s": "echo", "why": "The mind as a garden with a gate, built for analog inputs.", "both": null}, {"a": "f1", "b": "c3", "s": "contradict", "why": "Mastroianni curates what gets in. The dissent argument says exposure to the other side is the point.", "both": "you keep out the noise, not the opponents."}, {"a": "f3", "b": "f4", "s": "echo", "why": "Knowledge outruns wisdom; information isn't knowledge. Same gradient.", "both": null}, {"a": "f5", "b": "f1", "s": "echo", "why": "Old books, nature and religion as filters on what gets into your head.", "both": null}, {"a": "f6", "b": "f1", "s": "extend", "why": "Why filtering beats refuting: nonsense is cheaper to produce than to clean up.", "both": null}, {"a": "f5", "b": "c1", "s": "echo", "why": "Perell's way out of culture runs through tradition: old books and religion.", "both": null}, {"a": "g1", "b": "g2", "s": "echo", "why": "A Roman emperor and an F-16 pilot on 9/11: attend to what you must do, not to what you feel.", "both": null}, {"a": "g1", "b": "g6", "s": "complicate", "why": "Saunders asks you to open up to whatever makes you kinder. Marcus asks you to stop caring what they think.", "both": "you detach from opinion, not from people."}, {"a": "g3", "b": "a8", "s": "echo", "why": "Epictetus and Vance land on the same move: drop the blame, keep the agency.", "both": null}, {"a": "g4", "b": "g5", "s": "echo", "why": "Old injuries keep frightening us long after they could hurt us.", "both": null}, {"a": "g4", "b": "g7", "s": "extend", "why": "The Stoic cure for imagined suffering is to look straight at the real kind.", "both": null}, {"a": "g8", "b": "g1", "s": "echo", "why": "Stewing over an insult hands the other person the controls.", "both": null}, {"a": "g2", "b": "g6", "s": "contradict", "why": "Penney's emotional shutdown made her effective. Saunders treats openness as the thing that matters most.", "both": "you shut down for the crisis and open up for the life."}, {"a": "h2", "b": "h3", "s": "echo", "why": "Even the inner screen isn't standard equipment.", "both": null}, {"a": "h3", "b": "e10", "s": "extend", "why": "Consensus realities go all the way down, to how each of us experiences a thought.", "both": null}, {"a": "h1", "b": "b9", "s": "extend", "why": "Learning by doing at industrial scale: understanding arrives after production, not before.", "both": null}]};</script>
+<script>
+(() => {
+const D = window.COMMONPLACE;
+const byId = Object.fromEntries(D.items.map(i => [i.id, i]));
+const STANCE = {echo:"Echoes", extend:"Extends", complicate:"Complicates", contradict:"Contradicts"};
+const CATN = {BK:"■ Book", AR:"▬ Article", TW:"● Post", PD:"◆ Podcast"};
+const STILL = /still/.test(location.search);
+const PUSH = s => s === "complicate" || s === "contradict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const surname = it => {
+  if (it.voice) return it.voice.split(" ").pop();
+  if (!it.au || it.au === "Unknown author") return it.src.split(/[:—]/)[0];
+  const first = it.au.split(/ and |,/)[0].trim();
+  return first.startsWith("@") ? first : first.split(" ").pop();
+};
+const rels = id => D.edges.filter(e => e.a === id || e.b === id).map(e => ({...e, other: e.a === id ? e.b : e.a}));
+$("#count").textContent = `${D.items.length} of ${D.total.toLocaleString()} connected`;
+
+/* ---------------- WebGL field ---------------- */
+const cv = $("#gl"), gl = cv.getContext("webgl2", {antialias:true, premultipliedAlpha:false});
+const PAPER = [0.937, 0.929, 0.902], INK = [0.067, 0.067, 0.067], MUTE = [0.48, 0.47, 0.44], RED = [0.898, 0.204, 0.114];
+function sh(type, src){ const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+  if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw gl.getShaderInfoLog(s); return s; }
+function prog(vs, fs){ const p = gl.createProgram(); gl.attachShader(p, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(p); return p; }
+const HEAD = `#version 300 es
+precision highp float;
+uniform vec2 u_c; uniform float u_z; uniform vec2 u_res; uniform float u_t; uniform float u_dpr;
+vec4 proj(vec2 p){ return vec4((p - u_c) * u_z / (u_res * .5), 0., 1.); }`;
+const ptProg = prog(HEAD + `
+in vec2 a_p; in float a_s; in vec4 a_col; in float a_seed; in float a_shape;
+out vec4 v_col; out float v_shape;
+void main(){
+  vec2 p = a_p;
+  if (a_seed >= 0.) p += .006 * vec2(sin(u_t*.35 + a_seed*40.), cos(u_t*.29 + a_seed*57.));
+  gl_Position = proj(p); gl_PointSize = a_s * u_dpr; v_col = a_col; v_shape = a_shape;
+}`, `#version 300 es
+precision highp float; in vec4 v_col; in float v_shape; out vec4 o;
+void main(){
+  vec2 c = gl_PointCoord - .5;
+  float a = v_shape > .5 ? 1. : smoothstep(.5, .32, length(c));
+  o = vec4(v_col.rgb, v_col.a * a);
+}`);
+const lnProg = prog(HEAD + `
+in vec2 a_p; in vec4 a_col; out vec4 v_col;
+void main(){ gl_Position = proj(a_p); v_col = a_col; }`,
+`#version 300 es
+precision highp float; in vec4 v_col; out vec4 o; void main(){ o = v_col; }`);
+
+// background "rest of library": deterministic scatter around themes
+let seed = 3; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const gauss = () => Math.sqrt(-2*Math.log(rnd()+1e-9)) * Math.cos(6.283*rnd());
+const TH = Object.values(D.themes);
+const NB = D.total - D.items.length;
+const bg = new Float32Array(NB * 9);
+for (let i = 0; i < NB; i++){
+  let x, y;
+  if (rnd() < .82){ const c = TH[Math.floor(rnd()*TH.length)]; x = c[0] + gauss()*.2; y = c[1] + gauss()*.2; }
+  else { x = (rnd()*2-1)*1.15; y = (rnd()*2-1)*.95; }
+  const a = .18 + rnd()*.28;
+  bg.set([x, y, 2.2 + rnd()*1.4, MUTE[0], MUTE[1], MUTE[2], a, rnd(), 0], i*9);
+}
+const fg = new Float32Array(D.items.length * 9);
+function buf(){ const b = gl.createBuffer(); return b; }
+const bgBuf = buf(), fgBuf = buf(), lnBuf = buf();
+gl.bindBuffer(gl.ARRAY_BUFFER, bgBuf); gl.bufferData(gl.ARRAY_BUFFER, bg, gl.STATIC_DRAW);
+function attribs(p, stride, list){ for (const [name, size, off] of list){ const l = gl.getAttribLocation(p, name); if (l < 0) continue;
+  gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, size, gl.FLOAT, false, stride*4, off*4); } }
+const vaoBg = gl.createVertexArray(), vaoFg = gl.createVertexArray(), vaoLn = gl.createVertexArray();
+const PT = [["a_p",2,0],["a_s",1,2],["a_col",4,3],["a_seed",1,7],["a_shape",1,8]];
+gl.bindVertexArray(vaoBg); gl.bindBuffer(gl.ARRAY_BUFFER, bgBuf); attribs(ptProg, 9, PT);
+gl.bindVertexArray(vaoFg); gl.bindBuffer(gl.ARRAY_BUFFER, fgBuf); attribs(ptProg, 9, PT);
+gl.bindVertexArray(vaoLn); gl.bindBuffer(gl.ARRAY_BUFFER, lnBuf); attribs(lnProg, 6, [["a_p",2,0],["a_col",4,2]]);
+gl.bindVertexArray(null);
+
+const cam = {x:0, y:0, z:300, tx:0, ty:0, tz:300};
+let W = 0, H = 0, DPR = 1;
+function resize(){
+  const r = cv.getBoundingClientRect(); DPR = Math.min(2, devicePixelRatio || 1);
+  W = r.width; H = r.height; cv.width = Math.max(1, W*DPR); cv.height = Math.max(1, H*DPR);
+}
+new ResizeObserver(() => { resize(); if (!state.sel) fitAll(true); }).observe(cv);
+function fitAll(snap){ cam.tx = 0.02; cam.ty = 0; cam.tz = Math.min(W/2.5, H/2.05);
+  if (window.innerWidth > 860) cam.tx = -0.42 * (W / cam.tz) * .5; // shift right of the idle panel
+  if (snap){ cam.x = cam.tx; cam.y = cam.ty; cam.z = cam.tz; } }
+const toScreen = (x, y) => [W/2 + (x - cam.x)*cam.z, H/2 - (y - cam.y)*cam.z];
+const toWorld = (sx, sy) => [cam.x + (sx - W/2)/cam.z, cam.y - (sy - H/2)/cam.z];
+
+const state = {sel:null, trail:[], ti:-1, query:"", hover:null, related:new Map()};
+
+function paintFg(){
+  const q = state.query.toLowerCase();
+  D.items.forEach((it, i) => {
+    let col = INK, a = 1, s = 7;
+    const match = !q || (it.text + it.src + it.au + it.theme).toLowerCase().includes(q);
+    if (state.sel){
+      const r = state.related.get(it.id);
+      if (it.id === state.sel){ col = RED; s = 13; }
+      else if (r){ col = PUSH(r.s) ? RED : INK; s = 9; }
+      else { a = .28; s = 5; }
+    } else if (!match){ a = .14; }
+    else if (q){ s = 10; }
+    if (state.hover === it.id) s += 4;
+    fg.set([it.x, it.y, s, col[0], col[1], col[2], a, -1, 1], i*9);
+  });
+  gl.bindBuffer(gl.ARRAY_BUFFER, fgBuf); gl.bufferData(gl.ARRAY_BUFFER, fg, gl.DYNAMIC_DRAW);
+}
+
+function quad(out, x1, y1, x2, y2, w, c){ // w in px
+  const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy) || 1, k = (w/2) / cam.z;
+  const nx = -dy / L * k, ny = dx / L * k;
+  const v = [[x1+nx,y1+ny],[x1-nx,y1-ny],[x2+nx,y2+ny],[x2+nx,y2+ny],[x1-nx,y1-ny],[x2-nx,y2-ny]];
+  for (const p of v) out.push(p[0], p[1], c[0], c[1], c[2], c[3]);
+}
+function lines(){
+  const out = [];
+  for (const e of D.edges){
+    const A = byId[e.a], B = byId[e.b], p = PUSH(e.s);
+    let c, w;
+    if (state.sel){
+      const on = e.a === state.sel || e.b === state.sel;
+      if (!on) { c = [...INK, .05]; w = 1; }
+      else { c = p ? [...RED, 1] : [...INK, .9]; w = p ? 2.2 : 1.4; }
+    } else { c = p ? [...RED, .55] : [...INK, .16]; w = p ? 1.6 : 1; }
+    quad(out, A.x, A.y, B.x, B.y, w, c);
+  }
+  if (state.sel){ // red crosshair guide through the selection (Müller-Brockmann rule)
+    const s = byId[state.sel], big = 50;
+    quad(out, s.x, s.y - big, s.x, s.y + big, 1, [...RED, .7]);
+    quad(out, s.x - big, s.y, s.x + big, s.y, 1, [...RED, .25]);
+  }
+  return new Float32Array(out);
+}
+
+function frame(t){
+  const k = .085; cam.x += (cam.tx - cam.x)*k; cam.y += (cam.ty - cam.y)*k; cam.z += (cam.tz - cam.z)*k;
+  gl.viewport(0, 0, cv.width, cv.height);
+  gl.clearColor(...PAPER, 1); gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  const uni = p => { gl.useProgram(p);
+    gl.uniform2f(gl.getUniformLocation(p, "u_c"), cam.x, cam.y); gl.uniform1f(gl.getUniformLocation(p, "u_z"), cam.z);
+    gl.uniform2f(gl.getUniformLocation(p, "u_res"), W, H); gl.uniform1f(gl.getUniformLocation(p, "u_t"), t/1000);
+    gl.uniform1f(gl.getUniformLocation(p, "u_dpr"), DPR); };
+  uni(ptProg); gl.bindVertexArray(vaoBg); gl.drawArrays(gl.POINTS, 0, NB);
+  const L = lines(); uni(lnProg); gl.bindVertexArray(vaoLn); gl.bindBuffer(gl.ARRAY_BUFFER, lnBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, L, gl.DYNAMIC_DRAW); gl.drawArrays(gl.TRIANGLES, 0, L.length/6);
+  uni(ptProg); gl.bindVertexArray(vaoFg); gl.drawArrays(gl.POINTS, 0, D.items.length);
+  placeLabels();
+  requestAnimationFrame(frame);
+}
+
+/* labels */
+const labels = $("#labels");
+const themeEls = Object.entries(D.themes).map(([k, [x, y]]) => {
+  const el = document.createElement("div"); el.className = "tl"; el.textContent = k; labels.appendChild(el);
+  return {el, x, y: y + .2};
+});
+let relEls = [];
+function placeLabels(){
+  for (const l of themeEls){ const [sx, sy] = toScreen(l.x, l.y); l.el.style.left = sx + "px"; l.el.style.top = sy + "px"; }
+  for (const l of relEls){ const it = byId[l.id]; const [sx, sy] = toScreen(it.x, it.y); l.el.style.left = sx + "px"; l.el.style.top = sy + "px"; }
+}
+
+/* interaction */
+let drag = null;
+cv.addEventListener("pointerdown", e => { drag = {x:e.clientX, y:e.clientY, cx:cam.tx, cy:cam.ty, moved:false}; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener("pointermove", e => {
+  const r = cv.getBoundingClientRect(), sx = e.clientX - r.left, sy = e.clientY - r.top;
+  if (drag){ const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (Math.hypot(dx, dy) > 3) drag.moved = true;
+    cam.tx = drag.cx - dx/cam.z; cam.ty = drag.cy + dy/cam.z; cam.x = cam.tx; cam.y = cam.ty; }
+  let best = null, bd = 14;
+  for (const it of D.items){ const [x, y] = toScreen(it.x, it.y); const d = Math.hypot(x - sx, y - sy); if (d < bd){ bd = d; best = it; } }
+  if (best?.id !== state.hover){ state.hover = best?.id || null; paintFg(); }
+  const tip = $("#tip");
+  if (best && !drag?.moved){
+    tip.innerHTML = `${esc(best.text.length > 150 ? best.text.slice(0, 150) + "…" : best.text)}<span class="mono">${esc(best.src)}</span>`;
+    tip.style.left = e.clientX + "px"; tip.style.top = e.clientY + "px"; tip.style.opacity = 1; cv.style.cursor = "pointer";
+  } else { tip.style.opacity = 0; cv.style.cursor = drag ? "grabbing" : "crosshair"; }
+});
+cv.addEventListener("pointerup", () => { if (drag && !drag.moved && state.hover) select(state.hover); drag = null; });
+cv.addEventListener("pointerleave", () => { $("#tip").style.opacity = 0; });
+cv.addEventListener("wheel", e => { e.preventDefault();
+  const r = cv.getBoundingClientRect(), [wx, wy] = toWorld(e.clientX - r.left, e.clientY - r.top);
+  const f = Math.exp(-e.deltaY * .0015); cam.tz = Math.max(120, Math.min(4000, cam.tz * f));
+  cam.tx = wx - (wx - cam.tx) / f; cam.ty = wy - (wy - cam.ty) / f; }, {passive:false});
+
+/* ---------------- idle list ---------------- */
+function renderList(){
+  const q = state.query.trim().toLowerCase(), list = $("#list");
+  if (!q){
+    const t = D.edges.filter(e => e.s === "contradict");
+    $("#listtitle").textContent = "Tensions worth sitting with"; $("#listn").textContent = t.length;
+    list.innerHTML = t.map(e => { const A = byId[e.a], B = byId[e.b];
+      const sa = surname(A), sb = surname(B);
+      return `<li><button data-id="${e.a}" data-vs="${e.b}"><span class="pair">${esc(sa)}<b>⟂</b>${sa === sb ? "himself, same book" : esc(sb)}</span>
+        <span class="th mono">${A.theme === B.theme ? A.theme : A.theme.slice(0,4) + "/" + B.theme.slice(0,4)}</span>
+        <span class="sub">Both true if ${esc(e.both)}</span></button></li>`; }).join("");
+  } else {
+    const hits = D.items.filter(it => (it.text + it.src + it.au + it.theme).toLowerCase().includes(q));
+    $("#listtitle").textContent = `Matches for “${state.query}”`; $("#listn").textContent = hits.length;
+    list.innerHTML = hits.map(it => `<li><button data-id="${it.id}"><span class="pair" style="font-size:14px;font-weight:400">${esc(it.text.slice(0, 120))}${it.text.length > 120 ? "…" : ""}</span>
+      <span class="th mono">${it.cat}</span><span class="sub">${esc(it.src)}</span></button></li>`).join("")
+      || `<li style="padding:12px 0;color:var(--mute)">Nothing among the connected set. The full build would search all ${D.total.toLocaleString()}.</li>`;
+  }
+}
+$("#list").addEventListener("click", e => { const b = e.target.closest("button"); if (b) select(b.dataset.id, {vs:b.dataset.vs}); });
+
+/* ---------------- focus ---------------- */
+function select(id, opt = {}){
+  if (!byId[id]) return;
+  if (!opt.fromTrail){
+    state.trail = state.trail.slice(0, state.ti + 1);
+    if (state.trail[state.trail.length - 1] !== id) state.trail.push(id);
+    state.ti = state.trail.length - 1;
+  }
+  state.sel = id;
+  const it = byId[id], R = rels(id);
+  if (opt.vs) R.sort((a, b) => (b.other === opt.vs) - (a.other === opt.vs));
+  state.related = new Map(R.map(r => [r.other, r]));
+  document.body.classList.add("focus");
+  history.replaceState(null, "", "#" + id);
+  $("#tip").style.opacity = 0;
+
+  $("#over").innerHTML = `<span>${CATN[it.cat]}</span><span>${esc(it.theme)}</span>${it.date ? `<span>Kept ${it.date}</span>` : ""}<span class="t">${R.length} connections · ${R.filter(r => PUSH(r.s)).length} push back</span>`;
+  const q = $("#quote"); q.className = it.text.length > 300 ? "xl" : it.text.length > 170 ? "long" : "";
+  q.innerHTML = `“${esc(it.text)}”`;
+  if (!STILL) q.animate([{opacity:0, transform:"translateY(16px)"}, {opacity:1, transform:"none"}], {duration:700, easing:"cubic-bezier(.2,.7,.2,1)"});
+  $("#note").hidden = !it.note; $("#note").textContent = it.note;
+  $("#src").innerHTML = it.voice ? `<b>${esc(it.voice)}</b><br><span style="color:var(--mute)">quoted in ${esc(it.src)}, ${esc(it.au)}</span>`
+    : `<b>${esc(it.src)}</b><br><span style="color:var(--mute)">${esc(it.au)}</span>`;
+  $("#acts").innerHTML = `<a href="https://readwise.io/open/${it.rw}" target="_blank" rel="noopener">↗ Open in Readwise</a>
+    <button id="copy">⧉ Copy quote</button><button id="rand">⟲ Random</button><button id="back">Esc Back to field</button>`;
+  $("#copy").onclick = () => { navigator.clipboard?.writeText(`“${it.text}” — ${it.au}, ${it.src}`); $("#copy").textContent = "✓ Copied"; };
+  $("#rand").onclick = random; $("#back").onclick = unselect;
+
+  const res = R.filter(r => !PUSH(r.s)).sort((a, b) => (a.s === "echo" ? 0 : 1) - (b.s === "echo" ? 0 : 1));
+  const push = R.filter(r => PUSH(r.s)).sort((a, b) => (a.s === "contradict" ? 0 : 1) - (b.s === "contradict" ? 0 : 1));
+  if (opt.vs) push.sort((a, b) => (b.other === opt.vs) - (a.other === opt.vs));
+  const card = (r, i, pfx) => { const o = byId[r.other];
+    return `<article class="card ${PUSH(r.s) ? "p" : ""}" data-id="${o.id}" style="animation-delay:${120 + i*70}ms">
+      <div class="meta mono"><span class="n">${pfx}${String(i+1).padStart(2, "0")}</span><span>${STANCE[r.s]}</span><span>${o.theme !== it.theme ? "↗ " + o.theme : ""}</span></div>
+      <blockquote>${esc(o.text)}</blockquote>
+      <div class="s">${CATN[o.cat].split(" ")[0]} ${o.voice ? esc(o.voice) + ", via " + esc(o.src) : esc(o.src) + " — " + esc(o.au)}</div>
+      <p class="why">${esc(r.why)}</p>
+      ${r.both ? `<p class="both"><b>Both true if</b>${esc(r.both)}</p>` : ""}</article>`; };
+  $("#nres").textContent = String(res.length).padStart(2, "0");
+  $("#npush").textContent = String(push.length).padStart(2, "0");
+  $("#res").innerHTML = res.map((r, i) => card(r, i, "R")).join("") || `<div class="empty" style="border-color:var(--ink)">Nothing echoes this yet.</div>`;
+  $("#push").innerHTML = push.map((r, i) => card(r, i, "P")).join("") ||
+    `<div class="empty"><b>Nothing in the library argues with this yet.</b><br>An idea with no opposition is untested, not proven.
+     <br><br><a href="https://readwise.io/search?q=${encodeURIComponent(it.theme.toLowerCase())}" target="_blank" rel="noopener">Look for a counterpoint →</a></div>`;
+
+  // two steps away: neighbours of neighbours, for curiosity
+  const seen = new Set([id, ...R.map(r => r.other)]), far = [];
+  for (const r of R) for (const r2 of rels(r.other)) if (!seen.has(r2.other)){ seen.add(r2.other); far.push({id:r2.other, via:r.other}); }
+  $("#far").innerHTML = far.length ? `<span class="mono">Two steps away</span>` + far.slice(0, 6).map(f => { const o = byId[f.id];
+    return `<button data-id="${o.id}">${esc(o.text.slice(0, 110))}${o.text.length > 110 ? "…" : ""}<span>${esc(o.src)} · via ${esc(surname(byId[f.via]))}</span></button>`; }).join("") : "";
+
+  // map labels for related items
+  relEls.forEach(l => l.el.remove());
+  relEls = [...res.map((r, i) => ["R", i, r]), ...push.map((r, i) => ["P", i, r])].map(([p, i, r]) => {
+    const el = document.createElement("div"); el.className = "rl" + (p === "P" ? " p" : ""); el.textContent = p + String(i+1).padStart(2, "0");
+    labels.appendChild(el); return {el, id:r.other}; });
+
+  // camera: frame selection + its relations inside the rail map
+  const pts = [it, ...R.map(r => byId[r.other])];
+  const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+  const pad = 0.12, bw = Math.max(.25, Math.max(...xs) - Math.min(...xs) + pad*2), bh = Math.max(.25, Math.max(...ys) - Math.min(...ys) + pad*2);
+  const rw = innerWidth > 860 ? (innerWidth - 64 - 11*20)/12*3 + 40 : innerWidth - 32;
+  const rh = innerWidth > 860 ? innerHeight*.36 : innerHeight*.24;
+  cam.tx = (Math.max(...xs) + Math.min(...xs))/2; cam.ty = (Math.max(...ys) + Math.min(...ys))/2;
+  cam.tz = Math.min(rw / bw, rh / bh);
+  if (STILL){ cam.x = cam.tx; cam.y = cam.ty; cam.z = cam.tz; }
+
+  renderTrail(); paintFg();
+  document.querySelectorAll("#focus .card, #far button").forEach(el => el.onclick = () => select(el.dataset.id));
+  window.scrollTo({top:0, behavior: opt.fromTrail || state.trail.length < 2 ? "auto" : "smooth"});
+}
+function renderTrail(){
+  $("#trail").innerHTML = state.trail.map((id, i) => `<li data-i="${i}" class="${i === state.ti ? "cur" : ""}"><span class="mono">${String(i+1).padStart(2, "0")}</span>
+    <span>${esc(byId[id].text.slice(0, 70))}…</span></li>`).join("");
+  $("#trail").querySelectorAll("li").forEach(li => li.onclick = () => { state.ti = +li.dataset.i; select(state.trail[state.ti], {fromTrail:true}); });
+}
+function unselect(){
+  state.sel = null; state.related = new Map(); document.body.classList.remove("focus");
+  relEls.forEach(l => l.el.remove()); relEls = [];
+  history.replaceState(null, "", location.pathname); paintFg(); setTimeout(() => fitAll(false), 60);
+}
+function random(){ const c = D.items.filter(i => i.id !== state.sel); select(c[Math.floor(Math.random()*c.length)].id); }
+
+$("#q").addEventListener("input", e => { state.query = e.target.value; if (state.sel) unselect(); renderList(); paintFg(); });
+addEventListener("keydown", e => {
+  if (e.target === $("#q")){ if (e.key === "Escape"){ e.target.value = ""; state.query = ""; renderList(); paintFg(); e.target.blur(); } return; }
+  if (e.key === "/"){ e.preventDefault(); $("#q").focus(); }
+  else if (e.key === "Escape" && state.sel) unselect();
+  else if (e.key === "r" || e.key === "R") random();
+  else if (e.key === "ArrowLeft" && state.ti > 0){ state.ti--; select(state.trail[state.ti], {fromTrail:true}); }
+  else if (e.key === "ArrowRight" && state.ti < state.trail.length - 1){ state.ti++; select(state.trail[state.ti], {fromTrail:true}); }
+});
+
+resize(); fitAll(true); paintFg(); renderList(); requestAnimationFrame(frame);
+const h = location.hash.slice(1); if (byId[h]) setTimeout(() => select(h), 300);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "_doc": "Theme names. The build clusters highlights by meaning (k-means), then names each cluster after the closest description below; clusters with the same closest name merge into one theme. Edit names/descriptions freely.",
+  "k": 18,
+  "themes": {
+    "MAKING": "design, software, code, AI agents and prompts, photography, cameras and lighting, creative tools and craft",
+    "ECONOMY": "economics, capitalism, growth, poverty and development, countries and policy, China, globalisation, inequality and income",
+    "SOCIETY": "society, power, morality, politics, freedom, social groups, status and human behaviour in groups",
+    "MIND": "learning, knowledge, memory, the brain, understanding, information, reading and attention",
+    "WAR & STATE": "war, terrorism, the military, intelligence agencies, government programmes failing, Afghanistan, nuclear weapons, political scandals",
+    "OTHERS": "kindness, conversation, relationships, communication, empathy, listening, nonviolent communication, love and dating",
+    "BELIEF": "beliefs, being wrong, cognitive bias, evidence and truth, changing your mind, arguments and rationality",
+    "PHYSICS": "physics, the universe, time, space, energy, quantum mechanics and cosmology",
+    "WISDOM": "wisdom, aphorisms and proverbs, sayings of the wise, quotations about how to live well",
+    "HABITS": "habits, productivity, routines, focus, time management and getting work done",
+    "HAPPINESS": "happiness, love, desire, suffering, the self, contentment, stoic equanimity and inner peace",
+    "FOOD": "food, eating, diet, nutrition, cooking and drink",
+    "MONEY": "money, investing, spending, personal wealth, prices, markets and incentives",
+    "CITIES": "cities, urbanism, housing, streets, homes, public space, neighbourhoods and travel",
+    "EVIDENCE": "statistics, public health, drugs, pandemics, death rates, news media and institutions misleading us",
+    "BUSINESS": "companies, startups, teams, products, management, success and entrepreneurship",
+    "HISTORY": "history, ancient Rome and Greece, empires, biographies of historical figures, stories",
+    "AGENCY": "how to live your life, agency, choices, change, the future and the past, taking action",
+    "DECISIONS": "decision making, mental models, thinking clearly, judgement, checklists, avoiding mistakes, second-order thinking",
+    "STORIES": "novels and narrative, eyewitness accounts, disasters and collapse, survival, fiction, chapters of a story"
+  }
+}

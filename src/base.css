@@ -1,0 +1,38 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap");
+
+:root {
+  --paper: #f3f2ee; --ink: #0f0f0f; --mute: #74726c; --faint: #dcdad3; --red: #e5341d; --redtint: #f6dcd5;
+  --m: 32px; --g: 20px; --top: 64px;
+  --sans: "Inter Tight", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+* { box-sizing: border-box }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer }
+a { color: inherit }
+.mono { font-family: var(--mono); font-size: 11px; letter-spacing: .02em; text-transform: uppercase }
+.grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 0 var(--g) }
+.via { color: var(--mute) }
+:focus-visible { outline: 2px solid var(--red); outline-offset: 2px }
+
+#bar { position: sticky; top: 0; z-index: 20; height: var(--top); padding: 0 var(--m); align-items: center; background: var(--paper); border-bottom: 1px solid var(--ink) }
+#mark { grid-column: 1/4; font-weight: 600; font-size: 17px; letter-spacing: -.01em; display: flex; gap: 10px; align-items: center; text-decoration: none }
+#mark i { width: 12px; height: 12px; background: var(--red); display: inline-block }
+#nav { grid-column: 4/7; display: flex; gap: 18px }
+#nav a { color: var(--mute); text-decoration: none }
+#nav a.on, #nav a:hover { color: var(--ink) }
+#searchwrap { grid-column: 7/11; position: relative }
+#q { width: 100%; min-width: 0; border: 0; border-bottom: 1px solid var(--ink); background: transparent; font: 500 15px var(--sans); padding: 6px 0 6px 22px; outline: none; color: var(--ink); border-radius: 0 }
+#q::placeholder { color: var(--mute) }
+#searchwrap::before { content: "/"; position: absolute; left: 0; top: 7px; font: 500 12px var(--mono); color: var(--mute) }
+#count { grid-column: 11/13; text-align: right; color: var(--mute) }
+#loading { padding: 120px var(--m); color: var(--mute) }
+
+@media (max-width: 860px) {
+  :root { --m: 16px; --g: 12px }
+  #nav { grid-column: 6/13; justify-content: flex-end }
+  #count { display: none }
+  #mark { grid-column: 1/6 }
+  #searchwrap { grid-column: 1/-1; grid-row: 2 }
+  #bar { height: auto; padding-top: 14px; padding-bottom: 10px; row-gap: 10px }
+}
