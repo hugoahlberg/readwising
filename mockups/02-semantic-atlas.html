@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>02 / Semantic Atlas — Brutalist WebGL Coordinate Field</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { width: 100%; }
+
+  .artboard {
+    --dark: #161817;
+    --grey: #A5A8AB;
+    --ink: #131413;
+    --acid: #C8FA6C;
+    --silver: #D4D7D9;
+    --font-display: 'Barlow Condensed', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --font-sans: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --font-mono: 'IBM Plex Mono', 'SF Mono', ui-monospace, monospace;
+
+    width: 100%;
+    border-radius: var(--radius, 10px);
+    overflow: hidden;
+    background: var(--dark);
+    font-family: var(--font-sans);
+    color: var(--silver);
+  }
+
+  /* Upper WebGL Spatial Field */
+  .atlas-stage {
+    position: relative;
+    width: 100%;
+    height: 385px;
+    background: var(--dark);
+    overflow: hidden;
+    user-select: none;
+    cursor: grab;
+  }
+  .atlas-stage.dragging { cursor: grabbing; }
+
+  .bg-monumental {
+    position: absolute;
+    inset: 44px 16px auto 16px;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 94px;
+    line-height: 0.84;
+    letter-spacing: -0.025em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.052);
+    pointer-events: none;
+    z-index: 2;
+    mix-blend-mode: screen;
+  }
+
+  #atlas-gl {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    display: block;
+  }
+
+  .hud-top {
+    position: absolute;
+    top: 12px;
+    left: 16px;
+    right: 16px;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+    pointer-events: none;
+  }
+  .hud-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(22, 24, 23, 0.84);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    padding: 4px 6px;
+    border-radius: 3px;
+    pointer-events: auto;
+    backdrop-filter: blur(6px);
+  }
+  .hud-title {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--acid);
+    padding-right: 6px;
+    border-right: 1px solid rgba(255,255,255,0.14);
+    margin-right: 2px;
+  }
+  .hud-btn {
+    appearance: none;
+    background: transparent;
+    border: 1px solid transparent;
+    color: #C7CBCF;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 500;
+    padding: 2px 5px;
+    cursor: pointer;
+    border-radius: 2px;
+    text-transform: uppercase;
+  }
+  .hud-btn:hover { color: #fff; border-color: rgba(255,255,255,0.28); }
+  .hud-btn.active {
+    background: var(--acid);
+    color: #121411;
+    font-weight: 600;
+  }
+  .hud-search {
+    width: 118px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(255,255,255,0.28);
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    padding: 2px 3px;
+    outline: none;
+  }
+  .hud-search::placeholder { color: rgba(255,255,255,0.42); }
+
+  .node-labels {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .node-label {
+    position: absolute;
+    transform: translate(8px, -50%);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.04em;
+    color: rgba(212, 215, 217, 0.72);
+    white-space: nowrap;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.85);
+    transition: opacity 0.15s;
+  }
+  .node-label.active {
+    color: var(--acid);
+    font-weight: 600;
+    background: rgba(22, 24, 23, 0.85);
+    padding: 1px 4px;
+    border: 1px solid rgba(200, 250, 108, 0.55);
+  }
+  .node-label.connected {
+    color: #EFECE4;
+  }
+  .node-label.dimmed { opacity: 0.18; }
+
+  .sector-label {
+    position: absolute;
+    font-family: var(--font-mono);
+    font-size: 8.5px;
+    letter-spacing: 0.14em;
+    color: rgba(255, 255, 255, 0.25);
+    text-transform: uppercase;
+    transform: translate(-50%, -50%);
+  }
+
+  .hud-bottom {
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    bottom: 10px;
+    z-index: 4;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: none;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: rgba(212, 215, 217, 0.68);
+  }
+  .hud-bottom-pill {
+    background: rgba(22, 24, 23, 0.82);
+    border: 1px solid rgba(255,255,255,0.12);
+    padding: 3px 7px;
+    border-radius: 2px;
+  }
+  .tooltip {
+    position: absolute;
+    z-index: 5;
+    pointer-events: none;
+    background: #111311;
+    border: 1px solid var(--acid);
+    color: #F4F5F2;
+    padding: 5px 8px;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    max-width: 220px;
+    display: none;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+  }
+
+  /* Lower Architectural Grey Specimen Panel */
+  .inspector-panel {
+    background: var(--grey);
+    color: var(--ink);
+    padding: 15px 18px 16px;
+    border-top: 2px solid var(--acid);
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 14px;
+  }
+  .insp-left {
+    grid-column: span 3;
+    border-right: 1px solid rgba(19, 20, 19, 0.24);
+    padding-right: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .insp-code {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 38px;
+    line-height: 0.88;
+    letter-spacing: -0.02em;
+  }
+  .insp-badge {
+    display: inline-block;
+    background: var(--ink);
+    color: var(--acid);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    padding: 2px 5px;
+    margin-top: 6px;
+    letter-spacing: 0.05em;
+  }
+  .insp-coords {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: rgba(19, 20, 19, 0.65);
+    margin-top: 8px;
+    border-top: 1px solid rgba(19, 20, 19, 0.2);
+    padding-top: 5px;
+    line-height: 1.45;
+  }
+
+  .insp-mid {
+    grid-column: span 5;
+    border-right: 1px solid rgba(19, 20, 19, 0.24);
+    padding-right: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .insp-source {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgba(19, 20, 19, 0.72);
+  }
+  .insp-quote {
+    margin: 0;
+    font-size: 14.5px;
+    font-weight: 700;
+    line-height: 1.24;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  .insp-note {
+    margin: 0;
+    border-top: 1px solid rgba(19, 20, 19, 0.2);
+    padding-top: 6px;
+    font-size: 11px;
+    line-height: 1.38;
+    color: rgba(19, 20, 19, 0.82);
+  }
+
+  .insp-right {
+    grid-column: span 4;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .res-head {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(19, 20, 19, 0.65);
+  }
+  .res-item {
+    appearance: none;
+    width: 100%;
+    text-align: left;
+    background: rgba(19, 20, 19, 0.07);
+    border: 1px solid rgba(19, 20, 19, 0.22);
+    padding: 6px 8px;
+    cursor: pointer;
+    border-radius: 2px;
+    color: var(--ink);
+    transition: background 0.14s, border-color 0.14s;
+  }
+  .res-item:hover {
+    background: var(--ink);
+    color: #F3F5F1;
+    border-color: var(--ink);
+  }
+  .res-top {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+  }
+  .res-thesis {
+    font-size: 11px;
+    font-weight: 700;
+    margin: 2px 0;
+  }
+  .res-bar-track {
+    width: 100%;
+    height: 3px;
+    background: rgba(19, 20, 19, 0.18);
+    margin-top: 4px;
+    overflow: hidden;
+  }
+  .res-bar-fill {
+    height: 100%;
+    background: var(--acid);
+  }
+  .res-item:hover .res-bar-track { background: rgba(255,255,255,0.2); }
+
+  @media (max-width: 560px) {
+    .inspector-panel { grid-template-columns: 1fr; }
+    .insp-left, .insp-mid, .insp-right { grid-column: span 1; border-right: none; padding-right: 0; border-bottom: 1px solid rgba(19,20,19,0.2); padding-bottom: 10px; }
+    .insp-right { border-bottom: none; padding-bottom: 0; }
+    .bg-monumental { font-size: 54px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="artboard">
+    <div class="atlas-stage" id="atlas-stage">
+      <div class="bg-monumental">ATLAS 02<br>SEMANTIC FIELD</div>
+      <canvas id="atlas-gl"></canvas>
+      <div class="node-labels" id="node-labels"></div>
+
+      <div class="hud-top">
+        <div class="hud-group" id="source-filters">
+          <span class="hud-title">READWISING // 02</span>
+        </div>
+        <div class="hud-group">
+          <input type="text" class="hud-search" id="atlas-search" placeholder="SEARCH FIELD...">
+          <button type="button" class="hud-btn active" id="mode-btn">CROSS-DOMAIN</button>
+          <button type="button" class="hud-btn" id="zoom-in">+</button>
+          <button type="button" class="hud-btn" id="zoom-out">−</button>
+          <button type="button" class="hud-btn" id="zoom-fit">FIT</button>
+        </div>
+      </div>
+
+      <div class="hud-bottom">
+        <span class="hud-bottom-pill">DRAG PAN · SCROLL/± ZOOM · CLICK NODE TO INSPECT</span>
+        <span class="hud-bottom-pill" id="atlas-stat">12 FEATURED + 132 ARCHIVAL VECTORS</span>
+      </div>
+      <div class="tooltip" id="tooltip"></div>
+    </div>
+
+    <section class="inspector-panel" id="inspector"></section>
+  </div>
+</div>
+
+<script>
+(function() {
+  const NODES = [
+    { id: "BK·001", type: "book", shape: 0, glyph: "■", label: "BOOK", disc: "DESIGN", x: -0.62, y: 0.56, author: "Josef Müller-Brockmann", title: "Grid Systems in Graphic Design", quote: "The grid system is an aid, not a guarantee. It permits a number of possible uses and each designer can look for a solution appropriate to his personal style.", note: "Constraints unlock expressive variety rather than suppressing it.", edges: [ { to: "PD·022", score: 94, thesis: "CONSTRAINTS → EMERGENCE" }, { to: "NT·009", score: 92, thesis: "ESSENTIAL REDUCTION" } ] },
+    { id: "BK·014", type: "book", shape: 0, glyph: "■", label: "BOOK", disc: "SYSTEMS", x: 0.44, y: 0.46, author: "Donella H. Meadows", title: "Thinking in Systems", quote: "Purposes are deduced from behavior, not from rhetoric or stated goals.", note: "Behavior of connected notes reveals real thinking patterns better than folders.", edges: [ { to: "BK·031", score: 93, thesis: "SYSTEMS UNDER PRESSURE" }, { to: "AR·088", score: 90, thesis: "BEHAVIOR MADE VISIBLE" } ] },
+    { id: "BK·027", type: "book", shape: 0, glyph: "■", label: "BOOK", disc: "ARCHITECTURE", x: -0.28, y: -0.16, author: "Christopher Alexander", title: "A Pattern Language", quote: "Every place is given its character by certain patterns of events that keep on happening there.", note: "Recurring conceptual intersections turn isolated notes into living places.", edges: [ { to: "AR·104", score: 91, thesis: "LIVING TOPOLOGY" }, { to: "BK·062", score: 87, thesis: "RECIPROCAL PLACE" } ] },
+    { id: "BK·031", type: "book", shape: 0, glyph: "■", label: "BOOK", disc: "ARCHITECTURE", x: 0.14, y: 0.16, author: "Stewart Brand", title: "How Buildings Learn", quote: "Almost no buildings adapt well. They're designed not to adapt; also budgeted, constructed, and administered not to.", note: "Shearing layers separate fast-moving captures from durable mental models.", edges: [ { to: "BK·014", score: 93, thesis: "SYSTEMS UNDER PRESSURE" }, { to: "AR·119", score: 89, thesis: "PACE LAYERS × LATENCY" } ] },
+    { id: "BK·049", type: "book", shape: 0, glyph: "■", label: "BOOK", disc: "PHILOSOPHY", x: -0.64, y: -0.42, author: "Ted Chiang", title: "Exhalation", quote: "Contemplate the marvel that is existence, and rejoice that you are able to do so.", note: "Second brains exist to heighten wonder and clarity, not merely productivity.", edges: [ { to: "BK·062", score: 95, thesis: "RECIPROCAL ATTENTION" }, { to: "PD·037", score: 88, thesis: "FREQUENCY OF WONDER" } ] },
+    { id: "BK·062", type: "book", shape: 0, glyph: "■", label: "BOOK", disc: "ECOLOGY", x: -0.20, y: -0.56, author: "Robin Wall Kimmerer", title: "Braiding Sweetgrass", quote: "Paying attention is a form of reciprocity with the living world, receiving the gifts with open eyes and open heart.", note: "Attention becomes reciprocal when highlights nourish cross-disciplinary syntheses.", edges: [ { to: "BK·049", score: 95, thesis: "RECIPROCAL ATTENTION" }, { to: "PD·022", score: 91, thesis: "TENDING CONDITIONS" } ] },
+    { id: "AR·088", type: "article", shape: 1, glyph: "▬", label: "ARTICLE", disc: "COMPUTING", x: 0.64, y: 0.24, author: "Bret Victor", title: "Seeing Spaces", quote: "To understand a system, you must be able to see across time, across abstraction levels, and across possibilities simultaneously.", note: "Spatial WebGL canvases make non-linear conceptual distances directly legible.", edges: [ { to: "BK·014", score: 90, thesis: "BEHAVIOR MADE VISIBLE" }, { to: "AR·119", score: 88, thesis: "DIRECT MANIPULATION" } ] },
+    { id: "AR·104", type: "article", shape: 1, glyph: "▬", label: "ARTICLE", disc: "KNOWLEDGE", x: 0.14, y: -0.32, author: "Andy Matuschak", title: "Evergreen Notes", quote: "Evergreen notes should be densely linked across contexts, not filed neatly inside rigid topic silos.", note: "Unifies books, articles, podcasts, and notes into one associative coordinate space.", edges: [ { to: "PD·037", score: 96, thesis: "CROSS-CONTEXT RESONANCE" }, { to: "BK·027", score: 91, thesis: "LIVING TOPOLOGY" } ] },
+    { id: "AR·119", type: "article", shape: 1, glyph: "▬", label: "ARTICLE", disc: "CRAFT", x: 0.58, y: -0.22, author: "Craig Mod", title: "Fast Software, the Best Software", quote: "Speed is a design material. When latency drops below 50ms, the tool disappears and thought flows directly onto the canvas.", note: "Precomputed static embeddings + WebGL deliver zero-latency exploration.", edges: [ { to: "BK·031", score: 89, thesis: "PACE LAYERS × LATENCY" }, { to: "NT·009", score: 87, thesis: "FRICTIONLESS FORM" } ] },
+    { id: "PD·022", type: "podcast", shape: 2, glyph: "●", label: "PODCAST", disc: "AESTHETICS", x: -0.48, y: 0.14, author: "Brian Eno", title: "On Generative Systems & Gardens", quote: "Stop thinking like an architect who specifies every brick; start thinking like a gardener who plants seeds and tends conditions.", note: "Grid discipline + organic emergence = generative knowledge architecture.", edges: [ { to: "BK·001", score: 94, thesis: "CONSTRAINTS → EMERGENCE" }, { to: "BK·062", score: 91, thesis: "TENDING CONDITIONS" } ] },
+    { id: "PD·037", type: "podcast", shape: 2, glyph: "●", label: "PODCAST", disc: "CRAFT", x: 0.28, y: -0.56, author: "Rick Rubin", title: "The Creative Act Conversation", quote: "Taste is not knowing all the rules; it is noticing when two unrelated fragments vibrate at the same frequency.", note: "Cross-domain collision is the core mechanism of synthesis.", edges: [ { to: "AR·104", score: 96, thesis: "CROSS-CONTEXT RESONANCE" }, { to: "BK·049", score: 88, thesis: "FREQUENCY OF WONDER" } ] },
+    { id: "NT·009", type: "note", shape: 3, glyph: "◆", label: "NOTE", disc: "DESIGN", x: -0.82, y: 0.22, author: "Dieter Rams", title: "Archival Marginalia", quote: "Less, but better — because it concentrates on the essential aspects, and the products are not burdened with non-essentials.", note: "High-contrast Swiss precision clarifies complex associative networks.", edges: [ { to: "BK·001", score: 92, thesis: "ESSENTIAL REDUCTION" }, { to: "AR·119", score: 87, thesis: "FRICTIONLESS FORM" } ] }
+  ];
+
+  const SECTORS = [
+    { name: "DESIGN / FORM", x: -0.78, y: 0.72 },
+    { name: "SYSTEMS / COMPUTING", x: 0.62, y: 0.72 },
+    { name: "ARCHITECTURE", x: -0.05, y: 0.42 },
+    { name: "ECOLOGY / WONDER", x: -0.52, y: -0.74 },
+    { name: "CRAFT / SYNTHESIS", x: 0.54, y: -0.74 }
+  ];
+
+  // Deterministic ambient points representing the broader 132-highlight library
+  const AMBIENT = [];
+  let seed = 42;
+  const rand = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+  for (let i = 0; i < 132; i++) {
+    const anchor = NODES[i % NODES.length];
+    const ang = rand() * Math.PI * 2;
+    const rad = 0.06 + rand() * 0.28;
+    AMBIENT.push({
+      x: anchor.x + Math.cos(ang) * rad,
+      y: anchor.y + Math.sin(ang) * rad,
+      size: 2.2 + rand() * 3.0,
+      alpha: 0.16 + rand() * 0.26
+    });
+  }
+
+  const nodeById = Object.fromEntries(NODES.map(n => [n.id, n]));
+  let activeId = "BK·014";
+  let hoverId = null;
+  let filterType = "all";
+  let searchQ = "";
+  let crossDomainOnly = true;
+  let cam = { x: 0, y: 0, zoom: 1.0, tx: 0, ty: 0, tzoom: 1.0 };
+
+  const stage = document.getElementById("atlas-stage");
+  const canvas = document.getElementById("atlas-gl");
+  const labelsEl = document.getElementById("node-labels");
+  const filtersEl = document.getElementById("source-filters");
+  const searchEl = document.getElementById("atlas-search");
+  const modeBtn = document.getElementById("mode-btn");
+  const tooltipEl = document.getElementById("tooltip");
+  const inspectorEl = document.getElementById("inspector");
+
+  const filterList = [
+    { k: "all", l: "ALL" },
+    { k: "book", l: "■" },
+    { k: "article", l: "▬" },
+    { k: "podcast", l: "●" },
+    { k: "note", l: "◆" }
+  ];
+
+  function matchesFilter(n) {
+    if (filterType !== "all" && n.type !== filterType) return false;
+    const q = searchQ.trim().toLowerCase();
+    if (!q) return true;
+    return (n.id + " " + n.author + " " + n.title + " " + n.disc + " " + n.quote).toLowerCase().includes(q);
+  }
+
+  function renderFilterButtons() {
+    filtersEl.innerHTML = `<span class="hud-title">READWISING // 02</span>` + filterList.map(f =>
+      `<button type="button" class="hud-btn ${f.k === filterType ? 'active' : ''}" data-f="${f.k}">${f.l}</button>`
+    ).join("");
+  }
+
+  function renderInspector() {
+    const n = nodeById[activeId];
+    const resHtml = n.edges.map(e => {
+      const target = nodeById[e.to];
+      return `
+        <button type="button" class="res-item" data-jump="${target.id}">
+          <div class="res-top">
+            <span>↗ ${target.glyph} ${target.id} · ${target.disc}</span>
+            <span>${e.score}%</span>
+          </div>
+          <div class="res-thesis">${e.thesis}</div>
+          <div style="font-family:var(--font-mono);font-size:8.5px;opacity:0.75;">${target.author} — ${target.title}</div>
+          <div class="res-bar-track"><div class="res-bar-fill" style="width:${e.score}%"></div></div>
+        </button>
+      `;
+    }).join("");
+
+    inspectorEl.innerHTML = `
+      <div class="insp-left">
+        <div>
+          <div class="insp-code">${n.id}</div>
+          <span class="insp-badge">${n.glyph} ${n.label} · ${n.disc}</span>
+        </div>
+        <div class="insp-coords">
+          VEC X: ${n.x >= 0 ? "+" : ""}${n.x.toFixed(2)}<br>
+          VEC Y: ${n.y >= 0 ? "+" : ""}${n.y.toFixed(2)}<br>
+          LINKS: ${n.edges.length} BRIDGES
+        </div>
+      </div>
+      <div class="insp-mid">
+        <div>
+          <div class="insp-source">${n.author} — <em>${n.title}</em></div>
+          <blockquote class="insp-quote" style="margin-top:6px;">“${n.quote}”</blockquote>
+        </div>
+        <p class="insp-note"><strong>NOTE:</strong> ${n.note}</p>
+      </div>
+      <div class="insp-right">
+        <div class="res-head">CROSS-FUNCTIONAL RESONANCE</div>
+        ${resHtml}
+      </div>
+    `;
+
+    inspectorEl.querySelectorAll("[data-jump]").forEach(btn => {
+      btn.addEventListener("click", () => focusNode(btn.dataset.jump, true));
+    });
+  }
+
+  function focusNode(id, recenter) {
+    if (!nodeById[id]) return;
+    activeId = id;
+    if (recenter) {
+      cam.tx = nodeById[id].x * 0.45;
+      cam.ty = nodeById[id].y * 0.45;
+    }
+    renderInspector();
+  }
+
+  filtersEl.addEventListener("click", e => {
+    const btn = e.target.closest("[data-f]");
+    if (!btn) return;
+    filterType = btn.dataset.f;
+    renderFilterButtons();
+  });
+
+  searchEl.addEventListener("input", e => {
+    searchQ = e.target.value;
+    const hit = NODES.find(matchesFilter);
+    if (hit && !matchesFilter(nodeById[activeId])) {
+      focusNode(hit.id, true);
+    }
+  });
+
+  modeBtn.addEventListener("click", () => {
+    crossDomainOnly = !crossDomainOnly;
+    modeBtn.classList.toggle("active", crossDomainOnly);
+    modeBtn.textContent = crossDomainOnly ? "CROSS-DOMAIN" : "ALL LINKS";
+  });
+
+  document.getElementById("zoom-in").addEventListener("click", () => { cam.tzoom = Math.min(2.6, cam.tzoom * 1.25); });
+  document.getElementById("zoom-out").addEventListener("click", () => { cam.tzoom = Math.max(0.65, cam.tzoom / 1.25); });
+  document.getElementById("zoom-fit").addEventListener("click", () => { cam.tx = 0; cam.ty = 0; cam.tzoom = 1.0; });
+
+  // Coordinate helpers
+  function worldToScreen(wx, wy, w, h) {
+    const aspect = w / Math.max(1, h);
+    const sx = ((wx - cam.x) * cam.zoom / aspect * 0.85 + 0.5) * w;
+    const sy = (0.5 - (wy - cam.y) * cam.zoom * 0.85 * 0.52) * h;
+    return { x: sx, y: sy };
+  }
+
+  function worldToClip(wx, wy, w, h) {
+    const s = worldToScreen(wx, wy, w, h);
+    return [(s.x / w) * 2 - 1, 1 - (s.y / h) * 2];
+  }
+
+  // Pan & Click Interaction
+  let drag = null;
+  stage.addEventListener("mousedown", e => {
+    if (e.target.closest(".hud-group")) return;
+    drag = { sx: e.clientX, sy: e.clientY, cx: cam.tx, cy: cam.ty, moved: false };
+    stage.classList.add("dragging");
+  });
+  window.addEventListener("mousemove", e => {
+    const rect = stage.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    if (drag) {
+      const dx = e.clientX - drag.sx;
+      const dy = e.clientY - drag.sy;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) drag.moved = true;
+      const aspect = rect.width / Math.max(1, rect.height);
+      cam.tx = drag.cx - (dx / rect.width) * (aspect / (cam.zoom * 0.85));
+      cam.ty = drag.cy + (dy / rect.height) / (cam.zoom * 0.85 * 0.52);
+      cam.x = cam.tx;
+      cam.y = cam.ty;
+      return;
+    }
+    if (mx >= 0 && my >= 0 && mx <= rect.width && my <= rect.height) {
+      let best = null, bestD = 22;
+      for (const n of NODES) {
+        const s = worldToScreen(n.x, n.y, rect.width, rect.height);
+        const d = Math.hypot(s.x - mx, s.y - my);
+        if (d < bestD) { bestD = d; best = n; }
+      }
+      hoverId = best ? best.id : null;
+      stage.style.cursor = best ? "pointer" : "grab";
+      if (best) {
+        tooltipEl.style.display = "block";
+        tooltipEl.style.left = Math.min(rect.width - 230, Math.max(12, mx + 12)) + "px";
+        tooltipEl.style.top = Math.min(rect.height - 65, Math.max(46, my - 10)) + "px";
+        tooltipEl.innerHTML = `<span style="color:var(--acid)">${best.glyph} ${best.id} · ${best.disc}</span><br>${best.author} — ${best.title}`;
+      } else {
+        tooltipEl.style.display = "none";
+      }
+    }
+  });
+  window.addEventListener("mouseup", e => {
+    if (drag && !drag.moved) {
+      const rect = stage.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      let best = null, bestD = 24;
+      for (const n of NODES) {
+        const s = worldToScreen(n.x, n.y, rect.width, rect.height);
+        const d = Math.hypot(s.x - mx, s.y - my);
+        if (d < bestD) { bestD = d; best = n; }
+      }
+      if (best) focusNode(best.id, false);
+    }
+    drag = null;
+    stage.classList.remove("dragging");
+  });
+  stage.addEventListener("wheel", e => {
+    if (e.target.closest(".hud-group")) return;
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.1 : 0.9;
+    cam.tzoom = Math.min(2.6, Math.max(0.65, cam.tzoom * factor));
+  }, { passive: false });
+
+  // WebGL Setup
+  const gl = canvas.getContext("webgl", { antialias: true, alpha: true, preserveDrawingBuffer: true });
+  let lineProg, nodeProg, lineBuf, nodeBuf;
+
+  function makeShader(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+      console.error(gl.getShaderInfoLog(s));
+      return null;
+    }
+    return s;
+  }
+  function makeProg(vs, fs) {
+    const p = gl.createProgram();
+    gl.attachShader(p, makeShader(gl.VERTEX_SHADER, vs));
+    gl.attachShader(p, makeShader(gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
+      console.error(gl.getProgramInfoLog(p));
+      return null;
+    }
+    return p;
+  }
+
+  function initGL() {
+    if (!gl) return false;
+    const lVS = `
+      attribute vec2 a_pos;
+      attribute vec4 a_col;
+      varying vec4 v_col;
+      void main() {
+        v_col = a_col;
+        gl_Position = vec4(a_pos, 0.0, 1.0);
+      }
+    `;
+    const lFS = `
+      precision mediump float;
+      varying vec4 v_col;
+      void main() { gl_FragColor = v_col; }
+    `;
+    const nVS = `
+      attribute vec2 a_pos;
+      attribute float a_size;
+      attribute float a_shape;
+      attribute vec4 a_col;
+      varying float v_shape;
+      varying vec4 v_col;
+      void main() {
+        v_shape = a_shape;
+        v_col = a_col;
+        gl_PointSize = a_size;
+        gl_Position = vec4(a_pos, 0.0, 1.0);
+      }
+    `;
+    const nFS = `
+      precision mediump float;
+      varying float v_shape;
+      varying vec4 v_col;
+      void main() {
+        vec2 uv = gl_PointCoord * 2.0 - 1.0;
+        float d = 1.0;
+        if (v_shape < 0.5) {
+          // Square (Book)
+          vec2 q = abs(uv) - vec2(0.68);
+          d = max(q.x, q.y);
+        } else if (v_shape < 1.5) {
+          // Wide bar (Article)
+          vec2 q = abs(uv) - vec2(0.84, 0.38);
+          d = max(q.x, q.y);
+        } else if (v_shape < 2.5) {
+          // Circle (Podcast)
+          d = length(uv) - 0.72;
+        } else if (v_shape < 3.5) {
+          // Diamond (Note)
+          d = (abs(uv.x) + abs(uv.y)) - 0.85;
+        } else {
+          // Soft ambient dot
+          d = length(uv) - 0.75;
+        }
+        float alpha = 1.0 - smoothstep(-0.08, 0.14, d);
+        if (alpha < 0.02) discard;
+        gl_FragColor = vec4(v_col.rgb, v_col.a * alpha);
+      }
+    `;
+    lineProg = makeProg(lVS, lFS);
+    nodeProg = makeProg(nVS, nFS);
+    lineBuf = gl.createBuffer();
+    nodeBuf = gl.createBuffer();
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    return true;
+  }
+
+  // Create label DOM elements once
+  const sectorDom = SECTORS.map(s => {
+    const d = document.createElement("div");
+    d.className = "sector-label";
+    d.textContent = s.name;
+    labelsEl.appendChild(d);
+    return { ...s, el: d };
+  });
+  const nodeDom = NODES.map(n => {
+    const d = document.createElement("div");
+    d.className = "node-label";
+    d.textContent = `${n.id} · ${n.author.split(" ").pop()}`;
+    labelsEl.appendChild(d);
+    return { node: n, el: d };
+  });
+
+  function renderFrame(now) {
+    const t = now * 0.001;
+    cam.x += (cam.tx - cam.x) * 0.14;
+    cam.y += (cam.ty - cam.y) * 0.14;
+    cam.zoom += (cam.tzoom - cam.zoom) * 0.14;
+
+    const rect = stage.getBoundingClientRect();
+    const w = Math.max(1, rect.width);
+    const h = Math.max(1, rect.height);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const cw = Math.round(w * dpr);
+    const ch = Math.round(h * dpr);
+
+    if (gl) {
+      if (canvas.width !== cw || canvas.height !== ch) {
+        canvas.width = cw;
+        canvas.height = ch;
+      }
+      gl.viewport(0, 0, cw, ch);
+      gl.clearColor(0.086, 0.094, 0.09, 1.0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+
+      const lineVerts = [];
+      const pushSeg = (x0, y0, x1, y1, r, g, b, a) => {
+        lineVerts.push(x0, y0, r, g, b, a, x1, y1, r, g, b, a);
+      };
+
+      // Swiss Cartesian coordinate grid
+      for (let gx = -1.2; gx <= 1.21; gx += 0.3) {
+        const [x0, y0] = worldToClip(gx, -1.1, w, h);
+        const [x1, y1] = worldToClip(gx, 1.1, w, h);
+        const isAxis = Math.abs(gx) < 0.01;
+        pushSeg(x0, y0, x1, y1, 1, 1, 1, isAxis ? 0.11 : 0.045);
+      }
+      for (let gy = -0.9; gy <= 0.91; gy += 0.3) {
+        const [x0, y0] = worldToClip(-1.2, gy, w, h);
+        const [x1, y1] = worldToClip(1.2, gy, w, h);
+        const isAxis = Math.abs(gy) < 0.01;
+        pushSeg(x0, y0, x1, y1, 1, 1, 1, isAxis ? 0.11 : 0.045);
+      }
+
+      const activeNode = nodeById[activeId];
+      const connectedSet = new Set(activeNode.edges.map(e => e.to));
+
+      // All ambient topology links when mode = ALL LINKS
+      if (!crossDomainOnly) {
+        NODES.forEach(src => {
+          src.edges.forEach(e => {
+            const dst = nodeById[e.to];
+            const [ax, ay] = worldToClip(src.x, src.y, w, h);
+            const [bx, by] = worldToClip(dst.x, dst.y, w, h);
+            pushSeg(ax, ay, bx, by, 0.78, 0.82, 0.84, 0.13);
+          });
+        });
+      }
+
+      // Active glowing Acid Chartreuse Bezier connection beams
+      activeNode.edges.forEach((e, idx) => {
+        const dst = nodeById[e.to];
+        const mx = (activeNode.x + dst.x) * 0.5;
+        const my = (activeNode.y + dst.y) * 0.5 + (idx % 2 === 0 ? 0.14 : -0.14);
+        const steps = 26;
+        const pulse = (t * 0.55 + idx * 0.35) % 1.0;
+        for (let i = 0; i < steps; i++) {
+          const u0 = i / steps, u1 = (i + 1) / steps;
+          const wx0 = (1-u0)*(1-u0)*activeNode.x + 2*(1-u0)*u0*mx + u0*u0*dst.x;
+          const wy0 = (1-u0)*(1-u0)*activeNode.y + 2*(1-u0)*u0*my + u0*u0*dst.y;
+          const wx1 = (1-u1)*(1-u1)*activeNode.x + 2*(1-u1)*u1*mx + u1*u1*dst.x;
+          const wy1 = (1-u1)*(1-u1)*activeNode.y + 2*(1-u1)*u1*my + u1*u1*dst.y;
+          const [cx0, cy0] = worldToClip(wx0, wy0, w, h);
+          const [cx1, cy1] = worldToClip(wx1, wy1, w, h);
+          const glow = 0.45 + 0.52 * Math.exp(-Math.pow(u0 - pulse, 2) * 70.0);
+          pushSeg(cx0, cy0, cx1, cy1, 0.784, 0.980, 0.424, glow);
+        }
+      });
+
+      gl.useProgram(lineProg);
+      gl.bindBuffer(gl.ARRAY_BUFFER, lineBuf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(lineVerts), gl.DYNAMIC_DRAW);
+      const lp = gl.getAttribLocation(lineProg, "a_pos");
+      const lc = gl.getAttribLocation(lineProg, "a_col");
+      gl.enableVertexAttribArray(lp);
+      gl.enableVertexAttribArray(lc);
+      gl.vertexAttribPointer(lp, 2, gl.FLOAT, false, 24, 0);
+      gl.vertexAttribPointer(lc, 4, gl.FLOAT, false, 24, 8);
+      gl.drawArrays(gl.LINES, 0, lineVerts.length / 6);
+
+      // Nodes
+      const nodeVerts = [];
+      AMBIENT.forEach(a => {
+        const [cx, cy] = worldToClip(a.x, a.y, w, h);
+        nodeVerts.push(cx, cy, a.size * dpr, 4.0, 0.68, 0.71, 0.73, a.alpha);
+      });
+      NODES.forEach(n => {
+        const [cx, cy] = worldToClip(n.x, n.y, w, h);
+        const vis = matchesFilter(n);
+        const isAct = n.id === activeId;
+        const isConn = connectedSet.has(n.id);
+        const isHov = n.id === hoverId;
+        if (isAct) {
+          nodeVerts.push(cx, cy, (24 + Math.sin(t * 3.0) * 2.5) * dpr, 2.0, 0.784, 0.980, 0.424, 0.24);
+          nodeVerts.push(cx, cy, 13 * dpr, n.shape, 0.784, 0.980, 0.424, 1.0);
+        } else if (isConn || isHov) {
+          nodeVerts.push(cx, cy, 15 * dpr, 2.0, 0.784, 0.980, 0.424, 0.2);
+          nodeVerts.push(cx, cy, 10.5 * dpr, n.shape, 0.94, 0.95, 0.92, vis ? 0.98 : 0.25);
+        } else {
+          nodeVerts.push(cx, cy, 8.5 * dpr, n.shape, 0.65, 0.67, 0.69, vis ? 0.85 : 0.16);
+        }
+      });
+
+      gl.useProgram(nodeProg);
+      gl.bindBuffer(gl.ARRAY_BUFFER, nodeBuf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(nodeVerts), gl.DYNAMIC_DRAW);
+      const np = gl.getAttribLocation(nodeProg, "a_pos");
+      const ns = gl.getAttribLocation(nodeProg, "a_size");
+      const nsh = gl.getAttribLocation(nodeProg, "a_shape");
+      const nc = gl.getAttribLocation(nodeProg, "a_col");
+      gl.enableVertexAttribArray(np);
+      gl.enableVertexAttribArray(ns);
+      gl.enableVertexAttribArray(nsh);
+      gl.enableVertexAttribArray(nc);
+      gl.vertexAttribPointer(np, 2, gl.FLOAT, false, 32, 0);
+      gl.vertexAttribPointer(ns, 1, gl.FLOAT, false, 32, 8);
+      gl.vertexAttribPointer(nsh, 1, gl.FLOAT, false, 32, 12);
+      gl.vertexAttribPointer(nc, 4, gl.FLOAT, false, 32, 16);
+      gl.drawArrays(gl.POINTS, 0, nodeVerts.length / 8);
+    }
+
+    // Update overlay DOM labels
+    sectorDom.forEach(s => {
+      const p = worldToScreen(s.x, s.y, w, h);
+      s.el.style.left = p.x + "px";
+      s.el.style.top = p.y + "px";
+    });
+    const activeEdges = new Set(nodeById[activeId].edges.map(e => e.to));
+    nodeDom.forEach(({ node, el }) => {
+      const p = worldToScreen(node.x, node.y, w, h);
+      el.style.left = p.x + "px";
+      el.style.top = p.y + "px";
+      const vis = matchesFilter(node);
+      el.className = "node-label"
+        + (node.id === activeId ? " active" : activeEdges.has(node.id) ? " connected" : "")
+        + (!vis ? " dimmed" : "");
+    });
+  }
+
+  renderFilterButtons();
+  renderInspector();
+  initGL();
+  renderFrame(performance.now());
+  function loop(now) {
+    renderFrame(now);
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

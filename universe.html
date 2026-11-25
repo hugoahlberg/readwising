@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Universe · Commonplace</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='2' y='2' width='12' height='12' fill='%23e5341d'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/src/base.css">
+<link rel="stylesheet" href="/src/universe.css">
+</head>
+<body>
+<header id="ubar">
+  <a id="mark" href="./"><i></i>Commonplace</a>
+  <nav id="nav" class="mono"><a href="./">Index</a><a class="on" href="universe.html">◎ Universe</a></nav>
+  <div id="mode" class="mono">Loading…</div>
+</header>
+<div id="labels"></div>
+<div id="tip" role="tooltip"></div>
+<section id="intro">
+  <h1>Every highlight a star. <em>Red is where they argue.</em></h1>
+  <p>Close stars are close in meaning. Drag to orbit, scroll to fly. Click a star to see what it touches. Shift-click a second star to find the chain of ideas between them.</p>
+  <div class="legend mono">
+    <span class="dot"></span><span>Highlight</span>
+    <span class="dot r"></span><span>Contested</span>
+    <span class="sw"></span><span>Resonates (reviewed)</span>
+    <span class="sw r"></span><span>Pushes back (reviewed)</span>
+    <span class="sw d"></span><span>Nearby in meaning</span>
+  </div>
+</section>
+<aside id="panel" aria-live="polite"></aside>
+<div id="hint" class="mono">Drag orbit · Scroll fly · Click focus<br>Shift-click trace a path · Esc release</div>
+<script type="module" src="/src/universe.js"></script>
+</body>
+</html>

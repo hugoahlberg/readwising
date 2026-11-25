@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>03 / Synthesis Loom — 3D Kinetic Wisdom Collider</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { width: 100%; }
+
+  .artboard {
+    --bg: #15130F;
+    --gold: #E5AD2D;
+    --bone: #EFECE4;
+    --muted: rgba(239, 236, 228, 0.56);
+    --rule: rgba(229, 173, 45, 0.28);
+    --font-display: 'Barlow Condensed', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --font-sans: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --font-mono: 'IBM Plex Mono', 'SF Mono', ui-monospace, monospace;
+
+    width: 100%;
+    border-radius: var(--radius, 10px);
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--bone);
+    font-family: var(--font-sans);
+    padding: 14px 18px 16px;
+  }
+
+  /* Monumental Banner */
+  .banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 12px;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 8px;
+  }
+  .banner-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 38px;
+    line-height: 0.86;
+    letter-spacing: -0.02em;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+  .banner-thesis {
+    text-align: right;
+  }
+  .thesis-kicker {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.09em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .thesis-title {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 24px;
+    line-height: 0.95;
+    color: var(--bone);
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+  }
+
+  .ctrl-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--rule);
+    flex-wrap: wrap;
+  }
+  .ctrl-left, .ctrl-right {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    appearance: none;
+    background: transparent;
+    border: 1px solid var(--rule);
+    color: var(--bone);
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 500;
+    padding: 3px 7px;
+    cursor: pointer;
+    border-radius: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    transition: background 0.14s, color 0.14s, border-color 0.14s;
+  }
+  .btn:hover { border-color: var(--gold); color: var(--gold); }
+  .btn.active { background: var(--gold); color: #15130F; border-color: var(--gold); font-weight: 600; }
+  .btn-gold {
+    background: var(--gold);
+    color: #15130F;
+    border-color: var(--gold);
+    font-weight: 600;
+  }
+  .btn-gold:hover { background: #f2be42; color: #15130F; }
+
+  /* 3D WebGL Kinetic Stage */
+  .stage-3d {
+    position: relative;
+    width: 100%;
+    height: 246px;
+    margin: 8px 0;
+    border: 1px solid var(--rule);
+    background: radial-gradient(circle at 50% 54%, rgba(229, 173, 45, 0.09), rgba(21, 19, 15, 0.96) 72%);
+    overflow: hidden;
+    cursor: pointer;
+  }
+  #loom-gl {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .stage-labels {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .obj-tag {
+    position: absolute;
+    transform: translate(-50%, 10px);
+    font-family: var(--font-mono);
+    font-size: 8.5px;
+    letter-spacing: 0.05em;
+    color: rgba(239, 236, 228, 0.56);
+    white-space: nowrap;
+  }
+  .obj-tag.is-a {
+    color: var(--gold);
+    font-weight: 600;
+    background: rgba(21, 19, 15, 0.85);
+    padding: 1px 5px;
+    border: 1px solid var(--gold);
+  }
+  .obj-tag.is-b {
+    color: var(--bone);
+    font-weight: 600;
+    background: rgba(21, 19, 15, 0.85);
+    padding: 1px 5px;
+    border: 1px solid rgba(239, 236, 228, 0.65);
+  }
+  .obj-tag.dim { opacity: 0.16; }
+
+  .stage-legend {
+    position: absolute;
+    left: 10px;
+    bottom: 7px;
+    right: 10px;
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 8.5px;
+    color: var(--muted);
+    pointer-events: none;
+  }
+
+  /* Bottom Diptych */
+  .diptych {
+    display: grid;
+    grid-template-columns: 1fr 78px 1fr;
+    gap: 12px;
+    padding: 10px 0 11px;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+  .spec-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .spec-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.06em;
+  }
+  .spec-pill {
+    padding: 1px 5px;
+    font-weight: 600;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+  }
+  .spec-card.card-b .spec-pill {
+    border-color: var(--bone);
+    color: var(--bone);
+  }
+  .spec-quote {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.28;
+    letter-spacing: -0.015em;
+    color: var(--bone);
+  }
+  .spec-meta {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--muted);
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 5px;
+  }
+
+  .spine-col {
+    border-left: 1px solid var(--rule);
+    border-right: 1px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 4px;
+    text-align: center;
+  }
+  .spine-score {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 32px;
+    line-height: 0.9;
+    color: var(--gold);
+  }
+  .spine-pair {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    line-height: 1.3;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  /* Bottom Synthesis Bar */
+  .synthesis-bar {
+    padding-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .synth-readout {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    font-size: 11.5px;
+    line-height: 1.38;
+    color: var(--bone);
+  }
+  .synth-tag {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    color: #15130F;
+    background: var(--gold);
+    padding: 1px 6px;
+    white-space: nowrap;
+    letter-spacing: 0.05em;
+  }
+  .synth-form {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .synth-input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--rule);
+    color: var(--bone);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 5px 8px;
+    outline: none;
+    border-radius: 2px;
+  }
+  .synth-input:focus { border-color: var(--gold); }
+  .synth-input::placeholder { color: rgba(239, 236, 228, 0.36); }
+
+  @media (max-width: 560px) {
+    .diptych { grid-template-columns: 1fr; }
+    .spine-col { border-left: none; border-right: none; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); flex-direction: row; padding: 6px 0; }
+    .banner-title { font-size: 30px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="artboard">
+    <header class="banner">
+      <h1 class="banner-title">SYNTHESIS LOOM</h1>
+      <div class="banner-thesis">
+        <div class="thesis-kicker" id="thesis-kicker">CROSS-FUNCTIONAL COLLISION · 01</div>
+        <div class="thesis-title" id="thesis-title">CONSTRAINTS → EMERGENCE</div>
+      </div>
+    </header>
+
+    <div class="ctrl-bar">
+      <div class="ctrl-left" id="type-filters"></div>
+      <div class="ctrl-right">
+        <button type="button" class="btn" id="pick-b-btn">SET: SPECIMEN A</button>
+        <button type="button" class="btn" id="next-bridge-btn">NEXT BRIDGE →</button>
+        <button type="button" class="btn btn-gold" id="collide-btn">COLLIDE RANDOM ↻</button>
+      </div>
+    </div>
+
+    <div class="stage-3d" id="stage-3d">
+      <canvas id="loom-gl"></canvas>
+      <div class="stage-labels" id="stage-labels"></div>
+      <div class="stage-legend">
+        <span>3D PERSPECTIVE ORBIT · ■ MONOLITH BOOK · ▬ FOLIO ARTICLE · ● DISC PODCAST · ◆ TILE NOTE</span>
+        <span>CLICK OBJECT TO COLLIDE</span>
+      </div>
+    </div>
+
+    <section class="diptych" id="diptych"></section>
+
+    <section class="synthesis-bar">
+      <div class="synth-readout">
+        <span class="synth-tag">SYNTHESIS</span>
+        <span id="synth-text"></span>
+      </div>
+      <form class="synth-form" id="synth-form">
+        <input type="text" class="synth-input" id="synth-input" placeholder="ADD YOUR OWN CROSS-FUNCTIONAL INSIGHT FOR THIS PAIR...">
+        <button type="submit" class="btn btn-gold">SAVE NOTE</button>
+      </form>
+    </section>
+  </div>
+</div>
+
+<script>
+(function() {
+  const ITEMS = [
+    { id: "BK·001", type: "book", glyph: "■", disc: "DESIGN", author: "Josef Müller-Brockmann", title: "Grid Systems in Graphic Design", quote: "The grid system is an aid, not a guarantee. It permits a number of possible uses and each designer can look for a solution appropriate to his personal style." },
+    { id: "BK·014", type: "book", glyph: "■", disc: "SYSTEMS", author: "Donella H. Meadows", title: "Thinking in Systems", quote: "Purposes are deduced from behavior, not from rhetoric or stated goals." },
+    { id: "BK·027", type: "book", glyph: "■", disc: "ARCHITECTURE", author: "Christopher Alexander", title: "A Pattern Language", quote: "Every place is given its character by certain patterns of events that keep on happening there." },
+    { id: "BK·031", type: "book", glyph: "■", disc: "ARCHITECTURE", author: "Stewart Brand", title: "How Buildings Learn", quote: "Almost no buildings adapt well. They're designed not to adapt; also budgeted, constructed, and administered not to." },
+    { id: "BK·049", type: "book", glyph: "■", disc: "PHILOSOPHY", author: "Ted Chiang", title: "Exhalation", quote: "Contemplate the marvel that is existence, and rejoice that you are able to do so." },
+    { id: "BK·062", type: "book", glyph: "■", disc: "ECOLOGY", author: "Robin Wall Kimmerer", title: "Braiding Sweetgrass", quote: "Paying attention is a form of reciprocity with the living world, receiving the gifts with open eyes and open heart." },
+    { id: "AR·088", type: "article", glyph: "▬", disc: "COMPUTING", author: "Bret Victor", title: "Seeing Spaces", quote: "To understand a system, you must be able to see across time, across abstraction levels, and across possibilities simultaneously." },
+    { id: "AR·104", type: "article", glyph: "▬", disc: "KNOWLEDGE", author: "Andy Matuschak", title: "Evergreen Notes", quote: "Evergreen notes should be densely linked across contexts, not filed neatly inside rigid topic silos." },
+    { id: "AR·119", type: "article", glyph: "▬", disc: "CRAFT", author: "Craig Mod", title: "Fast Software, the Best Software", quote: "Speed is a design material. When latency drops below 50ms, the tool disappears and thought flows directly onto the canvas." },
+    { id: "PD·022", type: "podcast", glyph: "●", disc: "AESTHETICS", author: "Brian Eno", title: "On Generative Systems & Gardens", quote: "Stop thinking like an architect who specifies every brick; start thinking like a gardener who plants seeds and tends conditions." },
+    { id: "PD·037", type: "podcast", glyph: "●", disc: "CRAFT", author: "Rick Rubin", title: "The Creative Act Conversation", quote: "Taste is not knowing all the rules; it is noticing when two unrelated fragments vibrate at the same frequency." },
+    { id: "NT·009", type: "note", glyph: "◆", disc: "DESIGN", author: "Dieter Rams", title: "Archival Marginalia", quote: "Less, but better — because it concentrates on the essential aspects, and the products are not burdened with non-essentials." }
+  ];
+
+  const BRIDGES = [
+    { a: "BK·001", b: "PD·022", score: 94, thesis: "CONSTRAINTS → EMERGENCE", insight: "A strict Swiss grid acts as fertile garden beds: clear structural boundaries are precisely what free creative elements to recombine unexpectedly." },
+    { a: "AR·104", b: "PD·037", score: 96, thesis: "CROSS-CONTEXT RESONANCE", insight: "Dense cross-context links operationalize creative taste — turning serendipitous vibration across media formats into permanent architecture." },
+    { a: "BK·049", b: "BK·062", score: 95, thesis: "RECIPROCAL ATTENTION", insight: "Deep attention connects scientific wonder with ecological care: reading well is reciprocating with another mind across time." },
+    { a: "BK·014", b: "BK·031", score: 93, thesis: "SYSTEMS UNDER PRESSURE", insight: "Both living ecosystems and enduring architecture prove that real design purpose emerges in how structures adapt under change." },
+    { a: "BK·031", b: "AR·119", score: 89, thesis: "PACE LAYERS × LATENCY", insight: "Fast tools (<50ms) sit at the rapid surface layer of thought while enduring wisdom sediments slowly underneath." },
+    { a: "BK·014", b: "AR·088", score: 90, thesis: "BEHAVIOR MADE VISIBLE", insight: "If purpose is revealed through system behavior, interactive multi-scale visualizations let us perceive purpose immediately." },
+    { a: "BK·001", b: "NT·009", score: 92, thesis: "ESSENTIAL REDUCTION", insight: "Discipline removes visual noise so typographic rhythm and conceptual tension become the primary ornament." }
+  ];
+
+  const itemById = Object.fromEntries(ITEMS.map(x => [x.id, x]));
+  const customNotes = {};
+  let bridgeIdx = 0;
+  let idA = BRIDGES[0].a;
+  let idB = BRIDGES[0].b;
+  let filterType = "all";
+  let pickMode = "A";
+
+  const filtersEl = document.getElementById("type-filters");
+  const pickBBtn = document.getElementById("pick-b-btn");
+  const nextBridgeBtn = document.getElementById("next-bridge-btn");
+  const collideBtn = document.getElementById("collide-btn");
+  const thesisKickerEl = document.getElementById("thesis-kicker");
+  const thesisTitleEl = document.getElementById("thesis-title");
+  const diptychEl = document.getElementById("diptych");
+  const synthTextEl = document.getElementById("synth-text");
+  const synthForm = document.getElementById("synth-form");
+  const synthInput = document.getElementById("synth-input");
+  const stageEl = document.getElementById("stage-3d");
+  const labelsEl = document.getElementById("stage-labels");
+  const canvas = document.getElementById("loom-gl");
+
+  const filterDefs = [
+    { k: "all", l: "ALL 12" },
+    { k: "book", l: "■ BOOK" },
+    { k: "article", l: "▬ ART" },
+    { k: "podcast", l: "● POD" },
+    { k: "note", l: "◆ NOTE" }
+  ];
+
+  function pairKey(a, b) { return [a, b].sort().join("::"); }
+
+  function findPairInfo(a, b) {
+    const direct = BRIDGES.find(br => (br.a === a && br.b === b) || (br.a === b && br.b === a));
+    if (direct) return direct;
+    const ia = itemById[a], ib = itemById[b];
+    const hash = Math.abs((a.charCodeAt(3) * 17 + b.charCodeAt(4) * 31) % 12);
+    return {
+      score: 78 + hash,
+      thesis: `${ia.disc} × ${ib.disc}`,
+      insight: `Cross-domain synthesis between ${ia.author} (${ia.glyph} ${ia.disc}) and ${ib.author} (${ib.glyph} ${ib.disc}) exposes hidden structural parallels.`
+    };
+  }
+
+  function renderControls() {
+    filtersEl.innerHTML = filterDefs.map(f =>
+      `<button type="button" class="btn ${f.k === filterType ? 'active' : ''}" data-f="${f.k}">${f.l}</button>`
+    ).join("");
+  }
+
+  function renderDiptych() {
+    const a = itemById[idA];
+    const b = itemById[idB];
+    const info = findPairInfo(idA, idB);
+    const saved = customNotes[pairKey(idA, idB)];
+
+    thesisKickerEl.textContent = `CROSS-FUNCTIONAL COLLISION · ${a.glyph} ${a.id} × ${b.glyph} ${b.id}`;
+    thesisTitleEl.textContent = info.thesis;
+
+    diptychEl.innerHTML = `
+      <div class="spec-card card-a">
+        <div class="spec-head">
+          <span class="spec-pill">SPECIMEN A · ${a.glyph} ${a.id}</span>
+          <span style="color:var(--gold)">${a.disc}</span>
+        </div>
+        <blockquote class="spec-quote">“${a.quote}”</blockquote>
+        <div class="spec-meta">${a.author} — <em>${a.title}</em></div>
+      </div>
+      <div class="spine-col">
+        <div class="spine-score">${info.score}%</div>
+        <div class="spine-pair">${a.disc}<br>×<br>${b.disc}</div>
+        <button type="button" class="btn" id="swap-btn" style="padding:2px 6px;font-size:9px;">⇄ SWAP</button>
+      </div>
+      <div class="spec-card card-b">
+        <div class="spec-head">
+          <span class="spec-pill">SPECIMEN B · ${b.glyph} ${b.id}</span>
+          <span style="color:var(--muted)">${b.disc}</span>
+        </div>
+        <blockquote class="spec-quote">“${b.quote}”</blockquote>
+        <div class="spec-meta">${b.author} — <em>${b.title}</em></div>
+      </div>
+    `;
+
+    synthTextEl.textContent = saved || info.insight;
+    document.getElementById("swap-btn").addEventListener("click", () => {
+      [idA, idB] = [idB, idA];
+      renderDiptych();
+    });
+  }
+
+  filtersEl.addEventListener("click", e => {
+    const btn = e.target.closest("[data-f]");
+    if (!btn) return;
+    filterType = btn.dataset.f;
+    renderControls();
+  });
+
+  pickBBtn.addEventListener("click", () => {
+    pickMode = pickMode === "A" ? "B" : "A";
+    pickBBtn.classList.toggle("active", pickMode === "B");
+    pickBBtn.textContent = pickMode === "A" ? "SET: SPECIMEN A" : "SET: SPECIMEN B";
+  });
+
+  nextBridgeBtn.addEventListener("click", () => {
+    bridgeIdx = (bridgeIdx + 1) % BRIDGES.length;
+    idA = BRIDGES[bridgeIdx].a;
+    idB = BRIDGES[bridgeIdx].b;
+    renderDiptych();
+  });
+
+  collideBtn.addEventListener("click", () => {
+    const pool = filterType === "all" ? ITEMS : ITEMS.filter(x => x.type === filterType);
+    const list = pool.length >= 2 ? pool : ITEMS;
+    const pick1 = list[Math.floor(Math.random() * list.length)];
+    let pick2 = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+    while (pick2.id === pick1.id) {
+      pick2 = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+    }
+    idA = pick1.id;
+    idB = pick2.id;
+    renderDiptych();
+  });
+
+  synthForm.addEventListener("submit", e => {
+    e.preventDefault();
+    const val = synthInput.value.trim();
+    if (!val) return;
+    customNotes[pairKey(idA, idB)] = val;
+    synthInput.value = "";
+    renderDiptych();
+  });
+
+  // --- 3D Orbital Geometry & WebGL Engine ---
+  const ORBIT_SLOTS = [1, 4, 8, 10, 2, 5, 11, 3, 6, 7, 9, 0];
+  const ORBIT = ITEMS.map((item, i) => {
+    const slot = ORBIT_SLOTS[i];
+    const ang = (slot / ITEMS.length) * Math.PI * 2 + 0.28;
+    return {
+      item,
+      ang,
+      radiusX: 2.55,
+      radiusZ: 1.68,
+      yBase: Math.sin(ang * 2.0) * 0.26 + (slot % 2 === 0 ? 0.14 : -0.14),
+      pos: [0, 0, 0],
+      screen: { x: 0, y: 0, z: 0 }
+    };
+  });
+
+  const tagEls = ORBIT.map(o => {
+    const d = document.createElement("div");
+    d.className = "obj-tag";
+    d.textContent = `${o.item.glyph} ${o.item.id}`;
+    labelsEl.appendChild(d);
+    return d;
+  });
+
+  let mouseParallax = { x: 0, y: 0, tx: 0, ty: 0 };
+  stageEl.addEventListener("mousemove", e => {
+    const rect = stageEl.getBoundingClientRect();
+    mouseParallax.tx = ((e.clientX - rect.left) / Math.max(1, rect.width) - 0.5) * 0.35;
+    mouseParallax.ty = ((e.clientY - rect.top) / Math.max(1, rect.height) - 0.5) * 0.22;
+  });
+  stageEl.addEventListener("mouseleave", () => {
+    mouseParallax.tx = 0;
+    mouseParallax.ty = 0;
+  });
+  stageEl.addEventListener("click", e => {
+    const rect = stageEl.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    let best = null, bestD = 36;
+    ORBIT.forEach(o => {
+      const d = Math.hypot(o.screen.x - mx, o.screen.y - my);
+      if (d < bestD) { bestD = d; best = o.item; }
+    });
+    if (!best) return;
+    if (pickMode === "B" && best.id !== idA) {
+      idB = best.id;
+    } else {
+      idA = best.id;
+      const partner = BRIDGES.find(br => br.a === best.id || br.b === best.id);
+      if (partner) {
+        idB = partner.a === best.id ? partner.b : partner.a;
+      } else if (idB === idA) {
+        idB = ITEMS.find(x => x.id !== idA).id;
+      }
+    }
+    renderDiptych();
+  });
+
+  const gl = canvas.getContext("webgl", { antialias: true, alpha: true, preserveDrawingBuffer: true });
+  let prog, buf;
+
+  function compile(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+      console.error(gl.getShaderInfoLog(s));
+      return null;
+    }
+    return s;
+  }
+
+  function initGL() {
+    if (!gl) return false;
+    const vs = `
+      attribute vec3 a_pos;
+      attribute vec4 a_col;
+      varying vec4 v_col;
+      void main() {
+        v_col = a_col;
+        gl_Position = vec4(a_pos.xy, 0.0, 1.0);
+      }
+    `;
+    const fs = `
+      precision mediump float;
+      varying vec4 v_col;
+      void main() { gl_FragColor = v_col; }
+    `;
+    prog = gl.createProgram();
+    gl.attachShader(prog, compile(gl.VERTEX_SHADER, vs));
+    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(prog);
+    buf = gl.createBuffer();
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    return true;
+  }
+
+  function project3D(p, aspect) {
+    // Tilt camera downward and apply parallax
+    const pitch = 0.42 + mouseParallax.y;
+    const yaw = mouseParallax.x;
+    const cy = Math.cos(yaw), sy = Math.sin(yaw);
+    const cp = Math.cos(pitch), sp = Math.sin(pitch);
+
+    const x1 = p[0] * cy - p[2] * sy;
+    const z1 = p[0] * sy + p[2] * cy;
+    const y2 = p[1] * cp - z1 * sp;
+    const z2 = p[1] * sp + z1 * cp + 4.45;
+
+    const fov = 1.72;
+    const ndcX = (x1 * fov) / (z2 * aspect);
+    const ndcY = (y2 * fov) / z2;
+    return [ndcX, ndcY, z2];
+  }
+
+  function addWireBox(verts, center, w, h, d, rot, aspect, col) {
+    const cr = Math.cos(rot), sr = Math.sin(rot);
+    const pts = [
+      [-w,-h,-d],[w,-h,-d],[w,h,-d],[-w,h,-d],
+      [-w,-h,d],[w,-h,d],[w,h,d],[-w,h,d]
+    ].map(([px, py, pz]) => {
+      const rx = px * cr - pz * sr + center[0];
+      const rz = px * sr + pz * cr + center[2];
+      return project3D([rx, py + center[1], rz], aspect);
+    });
+    const edges = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+    edges.forEach(([i, j]) => {
+      verts.push(pts[i][0], pts[i][1], 0, col[0], col[1], col[2], col[3]);
+      verts.push(pts[j][0], pts[j][1], 0, col[0], col[1], col[2], col[3]);
+    });
+  }
+
+  function addWireDisc(verts, center, radius, rot, aspect, col) {
+    const segs = 18;
+    const cr = Math.cos(rot), sr = Math.sin(rot);
+    [1.0, 0.52].forEach(scale => {
+      for (let i = 0; i < segs; i++) {
+        const a0 = (i / segs) * Math.PI * 2;
+        const a1 = ((i + 1) / segs) * Math.PI * 2;
+        const p0 = [
+          center[0] + Math.cos(a0) * radius * scale * cr,
+          center[1] + Math.sin(a0) * radius * scale,
+          center[2] + Math.cos(a0) * radius * scale * sr
+        ];
+        const p1 = [
+          center[0] + Math.cos(a1) * radius * scale * cr,
+          center[1] + Math.sin(a1) * radius * scale,
+          center[2] + Math.cos(a1) * radius * scale * sr
+        ];
+        const s0 = project3D(p0, aspect);
+        const s1 = project3D(p1, aspect);
+        verts.push(s0[0], s0[1], 0, col[0], col[1], col[2], col[3]);
+        verts.push(s1[0], s1[1], 0, col[0], col[1], col[2], col[3]);
+      }
+    });
+  }
+
+  function addWireDiamond(verts, center, radius, rot, aspect, col) {
+    const cr = Math.cos(rot), sr = Math.sin(rot);
+    const local = [[0,radius,0],[radius,0,0],[0,-radius,0],[-radius,0,0],[0,0,radius*0.7],[0,0,-radius*0.7]];
+    const pts = local.map(([px, py, pz]) => project3D([
+      px * cr - pz * sr + center[0],
+      py + center[1],
+      px * sr + pz * cr + center[2]
+    ], aspect));
+    const edges = [[0,1],[1,2],[2,3],[3,0],[0,4],[1,4],[2,4],[3,4],[0,5],[1,5],[2,5],[3,5]];
+    edges.forEach(([i, j]) => {
+      verts.push(pts[i][0], pts[i][1], 0, col[0], col[1], col[2], col[3]);
+      verts.push(pts[j][0], pts[j][1], 0, col[0], col[1], col[2], col[3]);
+    });
+  }
+
+  function render3D(now) {
+    const t = now * 0.001;
+    mouseParallax.x += (mouseParallax.tx - mouseParallax.x) * 0.1;
+    mouseParallax.y += (mouseParallax.ty - mouseParallax.y) * 0.1;
+
+    const rect = stageEl.getBoundingClientRect();
+    const w = Math.max(1, rect.width);
+    const h = Math.max(1, rect.height);
+    const aspect = w / h;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const cw = Math.round(w * dpr);
+    const ch = Math.round(h * dpr);
+
+    const verts = [];
+
+    // Ground perspective grid
+    for (let g = -3.0; g <= 3.01; g += 0.75) {
+      const a = project3D([g, -0.78, -2.2], aspect);
+      const b = project3D([g, -0.78, 2.2], aspect);
+      verts.push(a[0], a[1], 0, 0.90, 0.68, 0.18, 0.11, b[0], b[1], 0, 0.90, 0.68, 0.18, 0.11);
+    }
+    for (let z = -2.25; z <= 2.26; z += 0.75) {
+      const a = project3D([-3.0, -0.78, z], aspect);
+      const b = project3D([3.0, -0.78, z], aspect);
+      verts.push(a[0], a[1], 0, 0.90, 0.68, 0.18, 0.11, b[0], b[1], 0, 0.90, 0.68, 0.18, 0.11);
+    }
+
+    // Update 3D positions & draw objects
+    let objA = null, objB = null;
+    ORBIT.forEach((o, i) => {
+      const theta = o.ang + t * 0.14;
+      const isA = o.item.id === idA;
+      const isB = o.item.id === idB;
+      const lift = (isA || isB) ? 0.34 : 0.0;
+      o.pos = [
+        Math.cos(theta) * o.radiusX,
+        o.yBase + lift + Math.sin(t * 1.4 + i) * 0.04,
+        Math.sin(theta) * o.radiusZ
+      ];
+      if (isA) objA = o;
+      if (isB) objB = o;
+
+      const proj = project3D(o.pos, aspect);
+      o.screen = {
+        x: (proj[0] * 0.5 + 0.5) * w,
+        y: (0.5 - proj[1] * 0.5) * h,
+        z: proj[2]
+      };
+
+      const matches = filterType === "all" || o.item.type === filterType;
+      const alpha = isA ? 0.98 : isB ? 0.92 : (matches ? 0.42 : 0.12);
+      const col = isA ? [0.898, 0.678, 0.176, alpha]
+                : isB ? [0.937, 0.925, 0.894, alpha]
+                : [0.898, 0.678, 0.176, alpha];
+      const sc = (isA || isB) ? 1.48 : 1.08;
+      const rot = theta * 0.9 + t * 0.3;
+
+      if (o.item.type === "book") {
+        addWireBox(verts, o.pos, 0.12*sc, 0.18*sc, 0.045*sc, rot, aspect, col);
+      } else if (o.item.type === "article") {
+        addWireBox(verts, o.pos, 0.21*sc, 0.09*sc, 0.03*sc, rot, aspect, col);
+      } else if (o.item.type === "podcast") {
+        addWireDisc(verts, o.pos, 0.16*sc, rot, aspect, col);
+      } else {
+        addWireDiamond(verts, o.pos, 0.15*sc, rot, aspect, col);
+      }
+    });
+
+    // Draw 3D parabolic energy arc bridging Specimen A and Specimen B
+    if (objA && objB) {
+      const mid = [
+        (objA.pos[0] + objB.pos[0]) * 0.5,
+        Math.max(objA.pos[1], objB.pos[1]) + 0.68,
+        (objA.pos[2] + objB.pos[2]) * 0.5
+      ];
+      const steps = 40;
+      const pulse = (t * 0.65) % 1.0;
+      for (let i = 0; i < steps; i++) {
+        const u0 = i / steps, u1 = (i + 1) / steps;
+        const p0 = [0, 1, 2].map(k => (1-u0)*(1-u0)*objA.pos[k] + 2*(1-u0)*u0*mid[k] + u0*u0*objB.pos[k]);
+        const p1 = [0, 1, 2].map(k => (1-u1)*(1-u1)*objA.pos[k] + 2*(1-u1)*u1*mid[k] + u1*u1*objB.pos[k]);
+        const s0 = project3D(p0, aspect);
+        const s1 = project3D(p1, aspect);
+        const glow = 0.42 + 0.58 * Math.exp(-Math.pow(u0 - pulse, 2) * 85.0);
+        verts.push(s0[0], s0[1], 0, 0.94, 0.74, 0.24, glow);
+        verts.push(s1[0], s1[1], 0, 0.94, 0.74, 0.24, glow);
+      }
+    }
+
+    if (gl && prog) {
+      if (canvas.width !== cw || canvas.height !== ch) {
+        canvas.width = cw;
+        canvas.height = ch;
+      }
+      gl.viewport(0, 0, cw, ch);
+      gl.clearColor(0.0, 0.0, 0.0, 0.0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+
+      gl.useProgram(prog);
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.DYNAMIC_DRAW);
+      const ap = gl.getAttribLocation(prog, "a_pos");
+      const ac = gl.getAttribLocation(prog, "a_col");
+      gl.enableVertexAttribArray(ap);
+      gl.enableVertexAttribArray(ac);
+      gl.vertexAttribPointer(ap, 3, gl.FLOAT, false, 28, 0);
+      gl.vertexAttribPointer(ac, 4, gl.FLOAT, false, 28, 12);
+      gl.drawArrays(gl.LINES, 0, verts.length / 7);
+    }
+
+    ORBIT.forEach((o, i) => {
+      const el = tagEls[i];
+      el.style.left = o.screen.x + "px";
+      el.style.top = o.screen.y + "px";
+      const matches = filterType === "all" || o.item.type === filterType;
+      el.className = "obj-tag"
+        + (o.item.id === idA ? " is-a" : o.item.id === idB ? " is-b" : "")
+        + (!matches && o.item.id !== idA && o.item.id !== idB ? " dim" : "");
+      el.style.zIndex = (o.item.id === idA || o.item.id === idB) ? 5 : 1;
+    });
+  }
+
+  renderControls();
+  renderDiptych();
+  initGL();
+  render3D(performance.now());
+  function loop(now) {
+    render3D(now);
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

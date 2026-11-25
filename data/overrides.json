@@ -1,0 +1,21 @@
+{
+ "_doc": "Per-highlight fixes by Readwise id. voice = who actually said it, when the highlight quotes someone other than the book's author.",
+ "voice": {
+  "980358188": "George Bernard Shaw",
+  "1063294679": "Russ Roberts",
+  "1063294677": "Isaac Asimov",
+  "1019048730": "Alberto Brandolini",
+  "1066993121": "Bertrand Russell",
+  "1032236071": "Rory Sutherland",
+  "1024942533": "Bill Perkins",
+  "1024942536": "Nassim Taleb",
+  "1019625021": "Billy Markus",
+  "1019625022": "David McRaney",
+  "1019048734": "Krista Tippett",
+  "976268135": "Hilary Mantel",
+  "1019048732": "George Saunders",
+  "1021764588": "David Perell",
+  "1032236072": "C. Northcote Parkinson",
+  "1037536441": "Søren Kierkegaard"
+ }
+}

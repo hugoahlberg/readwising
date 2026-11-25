@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Commonplace — Field</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#efede6; --ink:#111; --mute:#7a776f; --faint:#d6d3c8; --red:#e5341d;
+  --m:32px; --g:20px; --top:64px;
+  --col:calc((100vw - 2*var(--m) - 11*var(--g)) / 12);
+  --rail:calc(var(--col)*3 + var(--g)*2);
+  --sans:"Inter Tight","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+body{overflow-x:hidden}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+.mono{font-family:var(--mono);font-size:11px;letter-spacing:.02em;text-transform:uppercase}
+
+/* ---------- top bar ---------- */
+#bar{position:fixed;z-index:20;top:0;left:0;right:0;height:var(--top);display:grid;
+  grid-template-columns:repeat(12,minmax(0,1fr));gap:var(--g);padding:0 var(--m);align-items:center;
+  border-bottom:1px solid transparent;transition:background .4s,border-color .4s}
+body.focus #bar{background:var(--paper);border-color:var(--ink)}
+#mark{grid-column:1/4;font-weight:600;font-size:17px;letter-spacing:-.01em;display:flex;gap:10px;align-items:center}
+#mark i{width:12px;height:12px;background:var(--red);display:inline-block}
+#nav{grid-column:4/7;display:flex;gap:18px}
+#nav a{color:var(--mute);text-decoration:none}
+#nav a.on{color:var(--ink)}
+#searchwrap{grid-column:7/11;position:relative}
+#q{width:100%;min-width:0;border:0;border-bottom:1px solid var(--ink);background:transparent;font:500 15px var(--sans);
+  padding:6px 0 6px 22px;outline:none;color:var(--ink)}
+#q::placeholder{color:var(--mute)}
+#searchwrap:before{content:"/";position:absolute;left:0;top:7px;font:500 12px var(--mono);color:var(--mute)}
+#count{grid-column:11/13;text-align:right;color:var(--mute)}
+
+/* ---------- map ---------- */
+#map{position:fixed;z-index:1;top:0;left:0;width:100vw;height:100vh;
+  transition:top .9s cubic-bezier(.75,0,.2,1),left .9s cubic-bezier(.75,0,.2,1),width .9s cubic-bezier(.75,0,.2,1),height .9s cubic-bezier(.75,0,.2,1)}
+body.focus #map{top:calc(var(--top) + 28px);left:calc(100vw - var(--m) - var(--rail));width:var(--rail);height:36vh;outline:1px solid var(--ink)}
+#gl{width:100%;height:100%;display:block;cursor:crosshair}
+#labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.tl{position:absolute;transform:translate(-50%,-50%);font:500 10px var(--mono);letter-spacing:.14em;color:var(--mute);white-space:nowrap;transition:opacity .4s}
+body.focus .tl{opacity:0}
+.rl{position:absolute;font:500 10px var(--mono);transform:translate(7px,-140%);white-space:nowrap}
+.rl.p{color:var(--red)}
+#maptag{position:absolute;left:8px;bottom:6px;color:var(--mute);opacity:0;transition:opacity .4s}
+body.focus #maptag{opacity:1}
+#tip{position:fixed;z-index:30;pointer-events:none;max-width:320px;background:var(--ink);color:var(--paper);
+  padding:10px 12px;font-size:13px;line-height:1.35;opacity:0;transform:translate(14px,14px);transition:opacity .15s}
+#tip .mono{color:#a9a69d;display:block;margin-top:6px;font-size:10px}
+
+/* ---------- idle overlay ---------- */
+#idle{position:fixed;z-index:5;top:calc(var(--top) + 40px);left:var(--m);width:calc(var(--col)*4 + var(--g)*3);
+  bottom:var(--m);display:flex;flex-direction:column;pointer-events:none;transition:opacity .5s,transform .6s}
+#idle > *{pointer-events:auto}
+body.focus #idle{opacity:0;transform:translateX(-24px);pointer-events:none}
+body.focus #idle > *{pointer-events:none}
+#idle h1{font-weight:500;font-size:clamp(34px,3.6vw,58px);line-height:1;letter-spacing:-.035em;margin:0 0 28px}
+#idle h1 em{font-style:normal;color:var(--red)}
+.legend{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;align-items:center;margin-bottom:auto;color:var(--mute)}
+.sw{width:22px;height:0;border-top:1px solid var(--ink)}
+.sw.p{border-color:var(--red);border-top-width:2px}
+.sw.sq{width:7px;height:7px;background:var(--ink);border:0}
+.sw.dot{width:3px;height:3px;border-radius:50%;background:var(--mute);border:0;margin-left:2px}
+#listhead{display:flex;justify-content:space-between;border-top:2px solid var(--red);padding-top:8px;margin-top:24px;color:var(--red)}
+#list{list-style:none;margin:0;padding:0;overflow:auto;max-height:40vh;background:color-mix(in srgb,var(--paper) 86%,transparent)}
+#list li{border-bottom:1px solid var(--faint)}
+#list button{display:grid;grid-template-columns:1fr auto;gap:2px 12px;text-align:left;width:100%;padding:10px 0}
+#list .pair{font-weight:500;font-size:15px;letter-spacing:-.01em}
+#list .pair b{color:var(--red);font-weight:500;padding:0 4px}
+#list .th{color:var(--mute);align-self:center}
+#list .sub{grid-column:1/-1;font-size:13px;color:var(--mute);line-height:1.35}
+#list button:hover .pair{text-decoration:underline;text-underline-offset:3px}
+#hint{position:fixed;z-index:5;right:var(--m);bottom:var(--m);color:var(--mute);text-align:right;line-height:1.7;transition:opacity .4s}
+body.focus #hint{opacity:0}
+
+/* ---------- focus ---------- */
+#focus{position:relative;z-index:4;padding:calc(var(--top) + 28px) var(--m) 120px;display:none}
+body.focus #focus{display:block}
+#main{width:calc(var(--col)*9 + var(--g)*8 - var(--g))}
+#over{display:flex;gap:14px;flex-wrap:wrap;align-items:baseline;border-top:2px solid var(--ink);padding-top:10px}
+#over .t{margin-left:auto;color:var(--mute)}
+#quote{font-weight:500;letter-spacing:-.028em;line-height:1.06;margin:40px 0 0;font-size:clamp(30px,4.1vw,66px);max-width:20em;text-wrap:pretty}
+#quote.long{font-size:clamp(26px,3.1vw,48px);line-height:1.1}
+#quote.xl{font-size:clamp(23px,2.5vw,38px);line-height:1.14}
+#quote .q{display:inline}
+#note{margin:24px 0 0;max-width:36em;font-size:16px;line-height:1.45;padding-left:14px;border-left:2px solid var(--ink)}
+#src{margin-top:32px;font-size:17px;line-height:1.3}
+#src b{font-weight:600}
+#acts{display:flex;gap:22px;margin-top:22px;color:var(--mute);flex-wrap:wrap}
+#acts a,#acts button{color:var(--mute);text-decoration:none}
+#acts a:hover,#acts button:hover{color:var(--ink)}
+
+#rel{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--g);margin-top:88px}
+.colh{display:flex;justify-content:space-between;align-items:baseline;border-top:2px solid var(--ink);padding:10px 0 4px}
+.colh h2{margin:0;font-weight:500;font-size:28px;letter-spacing:-.025em}
+.colh .mono{color:var(--mute)}
+.colh.p{border-color:var(--red)}
+.colh.p h2{color:var(--red)}
+.card{border-top:1px solid var(--faint);padding:16px 0 20px;cursor:pointer;animation:rise .55s cubic-bezier(.2,.7,.2,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}}
+.card .meta{display:flex;gap:10px;color:var(--mute);margin-bottom:10px}
+.card .meta .n{color:var(--ink)}
+.p .card .meta .n,.card.p .meta .n{color:var(--red)}
+.card blockquote{margin:0;font-size:19px;line-height:1.3;letter-spacing:-.012em;font-weight:500}
+.card .s{margin-top:8px;font-size:13px;color:var(--mute)}
+.card .why{margin:12px 0 0;font-size:14px;line-height:1.42;max-width:34em}
+.card .why:before{content:"→ ";color:var(--mute)}
+.card .both{margin:10px 0 0;font-size:14px;line-height:1.42;padding:10px 12px;background:color-mix(in srgb,var(--red) 8%,var(--paper));max-width:34em}
+.card .both b{font:500 10.5px var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--red);display:block;margin-bottom:4px}
+.card:hover blockquote{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:4px}
+.empty{border:1px dashed var(--red);padding:18px;margin-top:14px;font-size:15px;line-height:1.4}
+.empty a{color:var(--red)}
+#far{margin-top:64px;border-top:1px solid var(--ink);padding-top:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:var(--g)}
+#far .mono{grid-column:1/-1;color:var(--mute)}
+#far button{text-align:left;font-size:14px;line-height:1.35;color:var(--ink)}
+#far button span{display:block;color:var(--mute);font-size:12px;margin-top:4px}
+#far button:hover{text-decoration:underline}
+
+#rail{position:fixed;z-index:4;right:var(--m);width:var(--rail);top:calc(var(--top) + 28px + 36vh + 28px);bottom:var(--m);display:none;flex-direction:column}
+body.focus #rail{display:flex}
+#rail .mono{color:var(--mute)}
+#trail{list-style:none;margin:8px 0 0;padding:0;border-top:1px solid var(--ink);overflow:auto}
+#trail li{display:grid;grid-template-columns:28px 1fr;padding:8px 0;border-bottom:1px solid var(--faint);font-size:13px;line-height:1.3;cursor:pointer}
+#trail li .mono{padding-top:2px}
+#trail li.cur{font-weight:600}
+#trail li.cur .mono{color:var(--red)}
+#trail li:hover span:last-child{text-decoration:underline}
+#railfoot{margin-top:auto;padding-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:6px;color:var(--mute)}
+
+@media (max-width:860px){
+  :root{--m:16px;--g:12px}
+  #nav,#count{display:none}
+  #mark{grid-column:1/6}
+  #searchwrap{grid-column:6/13}
+  #idle{width:auto;right:var(--m)}
+  #idle .legend{display:none}
+  #list{max-height:34vh}
+  #hint{display:none}
+  body.focus #map{left:var(--m);width:calc(100vw - 2*var(--m));height:24vh;top:calc(var(--top) + 12px)}
+  #focus{padding-top:calc(var(--top) + 24vh + 36px)}
+  #main{width:auto}
+  #rel{grid-template-columns:1fr}
+  #far{grid-template-columns:1fr}
+  #rail{display:none!important}
+  #quote{margin-top:24px}
+}
+</style>
+</head>
+<body>
+<header id="bar">
+  <div id="mark"><i></i>Commonplace</div>
+  <nav id="nav" class="mono"><a class="on" href="04-field.html">Field</a><a href="05-spectrum.html">Index</a></nav>
+  <div id="searchwrap"><input id="q" placeholder="Search 7,252 highlights" autocomplete="off" spellcheck="false"></div>
+  <div id="count" class="mono"></div>
+</header>
+
+<div id="map"><canvas id="gl"></canvas><div id="labels"></div><div id="maptag" class="mono">You are here</div></div>
+<div id="tip"></div>
+
+<section id="idle">
+  <h1>Everything I've highlighted, <em>and where it disagrees with itself.</em></h1>
+  <div class="legend mono">
+    <span class="sw sq"></span><span>Highlight with connections</span>
+    <span class="sw dot"></span><span>The rest of the library</span>
+    <span class="sw"></span><span>Resonates</span>
+    <span class="sw p"></span><span>Pushes back</span>
+  </div>
+  <div id="listhead" class="mono"><span id="listtitle">Tensions worth sitting with</span><span id="listn"></span></div>
+  <ul id="list"></ul>
+</section>
+<div id="hint" class="mono">Drag to pan · Scroll to zoom<br>/ Search · R Random · Esc Back</div>
+
+<section id="focus">
+  <div id="main">
+    <div id="over" class="mono"></div>
+    <h1 id="quote"></h1>
+    <div id="note" hidden></div>
+    <div id="src"></div>
+    <div id="acts" class="mono"></div>
+    <div id="rel">
+      <div><div class="colh"><h2>Resonates</h2><span class="mono" id="nres"></span></div><div id="res"></div></div>
+      <div class="p"><div class="colh p"><h2>Pushes back</h2><span class="mono" id="npush"></span></div><div id="push"></div></div>
+    </div>
+    <div id="far"></div>
+  </div>
+</section>
+<aside id="rail">
+  <span class="mono">Train of thought</span>
+  <ol id="trail"></ol>
+  <div id="railfoot" class="mono"><span>← → Step</span><span>Esc Field</span></div>
+</aside>
+
+<script>if (/still/.test(location.search)) document.write('<style>*,*:before{transition:none!important;animation:none!important}</style>')</script>
+<script>/*__DATA__*/</script>
+<script>
+(() => {
+const D = window.COMMONPLACE;
+const byId = Object.fromEntries(D.items.map(i => [i.id, i]));
+const STANCE = {echo:"Echoes", extend:"Extends", complicate:"Complicates", contradict:"Contradicts"};
+const CATN = {BK:"■ Book", AR:"▬ Article", TW:"● Post", PD:"◆ Podcast"};
+const STILL = /still/.test(location.search);
+const PUSH = s => s === "complicate" || s === "contradict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const surname = it => {
+  if (it.voice) return it.voice.split(" ").pop();
+  if (!it.au || it.au === "Unknown author") return it.src.split(/[:—]/)[0];
+  const first = it.au.split(/ and |,/)[0].trim();
+  return first.startsWith("@") ? first : first.split(" ").pop();
+};
+const rels = id => D.edges.filter(e => e.a === id || e.b === id).map(e => ({...e, other: e.a === id ? e.b : e.a}));
+$("#count").textContent = `${D.items.length} of ${D.total.toLocaleString()} connected`;
+
+/* ---------------- WebGL field ---------------- */
+const cv = $("#gl"), gl = cv.getContext("webgl2", {antialias:true, premultipliedAlpha:false});
+const PAPER = [0.937, 0.929, 0.902], INK = [0.067, 0.067, 0.067], MUTE = [0.48, 0.47, 0.44], RED = [0.898, 0.204, 0.114];
+function sh(type, src){ const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+  if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw gl.getShaderInfoLog(s); return s; }
+function prog(vs, fs){ const p = gl.createProgram(); gl.attachShader(p, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(p); return p; }
+const HEAD = `#version 300 es
+precision highp float;
+uniform vec2 u_c; uniform float u_z; uniform vec2 u_res; uniform float u_t; uniform float u_dpr;
+vec4 proj(vec2 p){ return vec4((p - u_c) * u_z / (u_res * .5), 0., 1.); }`;
+const ptProg = prog(HEAD + `
+in vec2 a_p; in float a_s; in vec4 a_col; in float a_seed; in float a_shape;
+out vec4 v_col; out float v_shape;
+void main(){
+  vec2 p = a_p;
+  if (a_seed >= 0.) p += .006 * vec2(sin(u_t*.35 + a_seed*40.), cos(u_t*.29 + a_seed*57.));
+  gl_Position = proj(p); gl_PointSize = a_s * u_dpr; v_col = a_col; v_shape = a_shape;
+}`, `#version 300 es
+precision highp float; in vec4 v_col; in float v_shape; out vec4 o;
+void main(){
+  vec2 c = gl_PointCoord - .5;
+  float a = v_shape > .5 ? 1. : smoothstep(.5, .32, length(c));
+  o = vec4(v_col.rgb, v_col.a * a);
+}`);
+const lnProg = prog(HEAD + `
+in vec2 a_p; in vec4 a_col; out vec4 v_col;
+void main(){ gl_Position = proj(a_p); v_col = a_col; }`,
+`#version 300 es
+precision highp float; in vec4 v_col; out vec4 o; void main(){ o = v_col; }`);
+
+// background "rest of library": deterministic scatter around themes
+let seed = 3; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const gauss = () => Math.sqrt(-2*Math.log(rnd()+1e-9)) * Math.cos(6.283*rnd());
+const TH = Object.values(D.themes);
+const NB = D.total - D.items.length;
+const bg = new Float32Array(NB * 9);
+for (let i = 0; i < NB; i++){
+  let x, y;
+  if (rnd() < .82){ const c = TH[Math.floor(rnd()*TH.length)]; x = c[0] + gauss()*.2; y = c[1] + gauss()*.2; }
+  else { x = (rnd()*2-1)*1.15; y = (rnd()*2-1)*.95; }
+  const a = .18 + rnd()*.28;
+  bg.set([x, y, 2.2 + rnd()*1.4, MUTE[0], MUTE[1], MUTE[2], a, rnd(), 0], i*9);
+}
+const fg = new Float32Array(D.items.length * 9);
+function buf(){ const b = gl.createBuffer(); return b; }
+const bgBuf = buf(), fgBuf = buf(), lnBuf = buf();
+gl.bindBuffer(gl.ARRAY_BUFFER, bgBuf); gl.bufferData(gl.ARRAY_BUFFER, bg, gl.STATIC_DRAW);
+function attribs(p, stride, list){ for (const [name, size, off] of list){ const l = gl.getAttribLocation(p, name); if (l < 0) continue;
+  gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, size, gl.FLOAT, false, stride*4, off*4); } }
+const vaoBg = gl.createVertexArray(), vaoFg = gl.createVertexArray(), vaoLn = gl.createVertexArray();
+const PT = [["a_p",2,0],["a_s",1,2],["a_col",4,3],["a_seed",1,7],["a_shape",1,8]];
+gl.bindVertexArray(vaoBg); gl.bindBuffer(gl.ARRAY_BUFFER, bgBuf); attribs(ptProg, 9, PT);
+gl.bindVertexArray(vaoFg); gl.bindBuffer(gl.ARRAY_BUFFER, fgBuf); attribs(ptProg, 9, PT);
+gl.bindVertexArray(vaoLn); gl.bindBuffer(gl.ARRAY_BUFFER, lnBuf); attribs(lnProg, 6, [["a_p",2,0],["a_col",4,2]]);
+gl.bindVertexArray(null);
+
+const cam = {x:0, y:0, z:300, tx:0, ty:0, tz:300};
+let W = 0, H = 0, DPR = 1;
+function resize(){
+  const r = cv.getBoundingClientRect(); DPR = Math.min(2, devicePixelRatio || 1);
+  W = r.width; H = r.height; cv.width = Math.max(1, W*DPR); cv.height = Math.max(1, H*DPR);
+}
+new ResizeObserver(() => { resize(); if (!state.sel) fitAll(true); }).observe(cv);
+function fitAll(snap){ cam.tx = 0.02; cam.ty = 0; cam.tz = Math.min(W/2.5, H/2.05);
+  if (window.innerWidth > 860) cam.tx = -0.42 * (W / cam.tz) * .5; // shift right of the idle panel
+  if (snap){ cam.x = cam.tx; cam.y = cam.ty; cam.z = cam.tz; } }
+const toScreen = (x, y) => [W/2 + (x - cam.x)*cam.z, H/2 - (y - cam.y)*cam.z];
+const toWorld = (sx, sy) => [cam.x + (sx - W/2)/cam.z, cam.y - (sy - H/2)/cam.z];
+
+const state = {sel:null, trail:[], ti:-1, query:"", hover:null, related:new Map()};
+
+function paintFg(){
+  const q = state.query.toLowerCase();
+  D.items.forEach((it, i) => {
+    let col = INK, a = 1, s = 7;
+    const match = !q || (it.text + it.src + it.au + it.theme).toLowerCase().includes(q);
+    if (state.sel){
+      const r = state.related.get(it.id);
+      if (it.id === state.sel){ col = RED; s = 13; }
+      else if (r){ col = PUSH(r.s) ? RED : INK; s = 9; }
+      else { a = .28; s = 5; }
+    } else if (!match){ a = .14; }
+    else if (q){ s = 10; }
+    if (state.hover === it.id) s += 4;
+    fg.set([it.x, it.y, s, col[0], col[1], col[2], a, -1, 1], i*9);
+  });
+  gl.bindBuffer(gl.ARRAY_BUFFER, fgBuf); gl.bufferData(gl.ARRAY_BUFFER, fg, gl.DYNAMIC_DRAW);
+}
+
+function quad(out, x1, y1, x2, y2, w, c){ // w in px
+  const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy) || 1, k = (w/2) / cam.z;
+  const nx = -dy / L * k, ny = dx / L * k;
+  const v = [[x1+nx,y1+ny],[x1-nx,y1-ny],[x2+nx,y2+ny],[x2+nx,y2+ny],[x1-nx,y1-ny],[x2-nx,y2-ny]];
+  for (const p of v) out.push(p[0], p[1], c[0], c[1], c[2], c[3]);
+}
+function lines(){
+  const out = [];
+  for (const e of D.edges){
+    const A = byId[e.a], B = byId[e.b], p = PUSH(e.s);
+    let c, w;
+    if (state.sel){
+      const on = e.a === state.sel || e.b === state.sel;
+      if (!on) { c = [...INK, .05]; w = 1; }
+      else { c = p ? [...RED, 1] : [...INK, .9]; w = p ? 2.2 : 1.4; }
+    } else { c = p ? [...RED, .55] : [...INK, .16]; w = p ? 1.6 : 1; }
+    quad(out, A.x, A.y, B.x, B.y, w, c);
+  }
+  if (state.sel){ // red crosshair guide through the selection (Müller-Brockmann rule)
+    const s = byId[state.sel], big = 50;
+    quad(out, s.x, s.y - big, s.x, s.y + big, 1, [...RED, .7]);
+    quad(out, s.x - big, s.y, s.x + big, s.y, 1, [...RED, .25]);
+  }
+  return new Float32Array(out);
+}
+
+function frame(t){
+  const k = .085; cam.x += (cam.tx - cam.x)*k; cam.y += (cam.ty - cam.y)*k; cam.z += (cam.tz - cam.z)*k;
+  gl.viewport(0, 0, cv.width, cv.height);
+  gl.clearColor(...PAPER, 1); gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  const uni = p => { gl.useProgram(p);
+    gl.uniform2f(gl.getUniformLocation(p, "u_c"), cam.x, cam.y); gl.uniform1f(gl.getUniformLocation(p, "u_z"), cam.z);
+    gl.uniform2f(gl.getUniformLocation(p, "u_res"), W, H); gl.uniform1f(gl.getUniformLocation(p, "u_t"), t/1000);
+    gl.uniform1f(gl.getUniformLocation(p, "u_dpr"), DPR); };
+  uni(ptProg); gl.bindVertexArray(vaoBg); gl.drawArrays(gl.POINTS, 0, NB);
+  const L = lines(); uni(lnProg); gl.bindVertexArray(vaoLn); gl.bindBuffer(gl.ARRAY_BUFFER, lnBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, L, gl.DYNAMIC_DRAW); gl.drawArrays(gl.TRIANGLES, 0, L.length/6);
+  uni(ptProg); gl.bindVertexArray(vaoFg); gl.drawArrays(gl.POINTS, 0, D.items.length);
+  placeLabels();
+  requestAnimationFrame(frame);
+}
+
+/* labels */
+const labels = $("#labels");
+const themeEls = Object.entries(D.themes).map(([k, [x, y]]) => {
+  const el = document.createElement("div"); el.className = "tl"; el.textContent = k; labels.appendChild(el);
+  return {el, x, y: y + .2};
+});
+let relEls = [];
+function placeLabels(){
+  for (const l of themeEls){ const [sx, sy] = toScreen(l.x, l.y); l.el.style.left = sx + "px"; l.el.style.top = sy + "px"; }
+  for (const l of relEls){ const it = byId[l.id]; const [sx, sy] = toScreen(it.x, it.y); l.el.style.left = sx + "px"; l.el.style.top = sy + "px"; }
+}
+
+/* interaction */
+let drag = null;
+cv.addEventListener("pointerdown", e => { drag = {x:e.clientX, y:e.clientY, cx:cam.tx, cy:cam.ty, moved:false}; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener("pointermove", e => {
+  const r = cv.getBoundingClientRect(), sx = e.clientX - r.left, sy = e.clientY - r.top;
+  if (drag){ const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (Math.hypot(dx, dy) > 3) drag.moved = true;
+    cam.tx = drag.cx - dx/cam.z; cam.ty = drag.cy + dy/cam.z; cam.x = cam.tx; cam.y = cam.ty; }
+  let best = null, bd = 14;
+  for (const it of D.items){ const [x, y] = toScreen(it.x, it.y); const d = Math.hypot(x - sx, y - sy); if (d < bd){ bd = d; best = it; } }
+  if (best?.id !== state.hover){ state.hover = best?.id || null; paintFg(); }
+  const tip = $("#tip");
+  if (best && !drag?.moved){
+    tip.innerHTML = `${esc(best.text.length > 150 ? best.text.slice(0, 150) + "…" : best.text)}<span class="mono">${esc(best.src)}</span>`;
+    tip.style.left = e.clientX + "px"; tip.style.top = e.clientY + "px"; tip.style.opacity = 1; cv.style.cursor = "pointer";
+  } else { tip.style.opacity = 0; cv.style.cursor = drag ? "grabbing" : "crosshair"; }
+});
+cv.addEventListener("pointerup", () => { if (drag && !drag.moved && state.hover) select(state.hover); drag = null; });
+cv.addEventListener("pointerleave", () => { $("#tip").style.opacity = 0; });
+cv.addEventListener("wheel", e => { e.preventDefault();
+  const r = cv.getBoundingClientRect(), [wx, wy] = toWorld(e.clientX - r.left, e.clientY - r.top);
+  const f = Math.exp(-e.deltaY * .0015); cam.tz = Math.max(120, Math.min(4000, cam.tz * f));
+  cam.tx = wx - (wx - cam.tx) / f; cam.ty = wy - (wy - cam.ty) / f; }, {passive:false});
+
+/* ---------------- idle list ---------------- */
+function renderList(){
+  const q = state.query.trim().toLowerCase(), list = $("#list");
+  if (!q){
+    const t = D.edges.filter(e => e.s === "contradict");
+    $("#listtitle").textContent = "Tensions worth sitting with"; $("#listn").textContent = t.length;
+    list.innerHTML = t.map(e => { const A = byId[e.a], B = byId[e.b];
+      const sa = surname(A), sb = surname(B);
+      return `<li><button data-id="${e.a}" data-vs="${e.b}"><span class="pair">${esc(sa)}<b>⟂</b>${sa === sb ? "himself, same book" : esc(sb)}</span>
+        <span class="th mono">${A.theme === B.theme ? A.theme : A.theme.slice(0,4) + "/" + B.theme.slice(0,4)}</span>
+        <span class="sub">Both true if ${esc(e.both)}</span></button></li>`; }).join("");
+  } else {
+    const hits = D.items.filter(it => (it.text + it.src + it.au + it.theme).toLowerCase().includes(q));
+    $("#listtitle").textContent = `Matches for “${state.query}”`; $("#listn").textContent = hits.length;
+    list.innerHTML = hits.map(it => `<li><button data-id="${it.id}"><span class="pair" style="font-size:14px;font-weight:400">${esc(it.text.slice(0, 120))}${it.text.length > 120 ? "…" : ""}</span>
+      <span class="th mono">${it.cat}</span><span class="sub">${esc(it.src)}</span></button></li>`).join("")
+      || `<li style="padding:12px 0;color:var(--mute)">Nothing among the connected set. The full build would search all ${D.total.toLocaleString()}.</li>`;
+  }
+}
+$("#list").addEventListener("click", e => { const b = e.target.closest("button"); if (b) select(b.dataset.id, {vs:b.dataset.vs}); });
+
+/* ---------------- focus ---------------- */
+function select(id, opt = {}){
+  if (!byId[id]) return;
+  if (!opt.fromTrail){
+    state.trail = state.trail.slice(0, state.ti + 1);
+    if (state.trail[state.trail.length - 1] !== id) state.trail.push(id);
+    state.ti = state.trail.length - 1;
+  }
+  state.sel = id;
+  const it = byId[id], R = rels(id);
+  if (opt.vs) R.sort((a, b) => (b.other === opt.vs) - (a.other === opt.vs));
+  state.related = new Map(R.map(r => [r.other, r]));
+  document.body.classList.add("focus");
+  history.replaceState(null, "", "#" + id);
+  $("#tip").style.opacity = 0;
+
+  $("#over").innerHTML = `<span>${CATN[it.cat]}</span><span>${esc(it.theme)}</span>${it.date ? `<span>Kept ${it.date}</span>` : ""}<span class="t">${R.length} connections · ${R.filter(r => PUSH(r.s)).length} push back</span>`;
+  const q = $("#quote"); q.className = it.text.length > 300 ? "xl" : it.text.length > 170 ? "long" : "";
+  q.innerHTML = `“${esc(it.text)}”`;
+  if (!STILL) q.animate([{opacity:0, transform:"translateY(16px)"}, {opacity:1, transform:"none"}], {duration:700, easing:"cubic-bezier(.2,.7,.2,1)"});
+  $("#note").hidden = !it.note; $("#note").textContent = it.note;
+  $("#src").innerHTML = it.voice ? `<b>${esc(it.voice)}</b><br><span style="color:var(--mute)">quoted in ${esc(it.src)}, ${esc(it.au)}</span>`
+    : `<b>${esc(it.src)}</b><br><span style="color:var(--mute)">${esc(it.au)}</span>`;
+  $("#acts").innerHTML = `<a href="https://readwise.io/open/${it.rw}" target="_blank" rel="noopener">↗ Open in Readwise</a>
+    <button id="copy">⧉ Copy quote</button><button id="rand">⟲ Random</button><button id="back">Esc Back to field</button>`;
+  $("#copy").onclick = () => { navigator.clipboard?.writeText(`“${it.text}” — ${it.au}, ${it.src}`); $("#copy").textContent = "✓ Copied"; };
+  $("#rand").onclick = random; $("#back").onclick = unselect;
+
+  const res = R.filter(r => !PUSH(r.s)).sort((a, b) => (a.s === "echo" ? 0 : 1) - (b.s === "echo" ? 0 : 1));
+  const push = R.filter(r => PUSH(r.s)).sort((a, b) => (a.s === "contradict" ? 0 : 1) - (b.s === "contradict" ? 0 : 1));
+  if (opt.vs) push.sort((a, b) => (b.other === opt.vs) - (a.other === opt.vs));
+  const card = (r, i, pfx) => { const o = byId[r.other];
+    return `<article class="card ${PUSH(r.s) ? "p" : ""}" data-id="${o.id}" style="animation-delay:${120 + i*70}ms">
+      <div class="meta mono"><span class="n">${pfx}${String(i+1).padStart(2, "0")}</span><span>${STANCE[r.s]}</span><span>${o.theme !== it.theme ? "↗ " + o.theme : ""}</span></div>
+      <blockquote>${esc(o.text)}</blockquote>
+      <div class="s">${CATN[o.cat].split(" ")[0]} ${o.voice ? esc(o.voice) + ", via " + esc(o.src) : esc(o.src) + " — " + esc(o.au)}</div>
+      <p class="why">${esc(r.why)}</p>
+      ${r.both ? `<p class="both"><b>Both true if</b>${esc(r.both)}</p>` : ""}</article>`; };
+  $("#nres").textContent = String(res.length).padStart(2, "0");
+  $("#npush").textContent = String(push.length).padStart(2, "0");
+  $("#res").innerHTML = res.map((r, i) => card(r, i, "R")).join("") || `<div class="empty" style="border-color:var(--ink)">Nothing echoes this yet.</div>`;
+  $("#push").innerHTML = push.map((r, i) => card(r, i, "P")).join("") ||
+    `<div class="empty"><b>Nothing in the library argues with this yet.</b><br>An idea with no opposition is untested, not proven.
+     <br><br><a href="https://readwise.io/search?q=${encodeURIComponent(it.theme.toLowerCase())}" target="_blank" rel="noopener">Look for a counterpoint →</a></div>`;
+
+  // two steps away: neighbours of neighbours, for curiosity
+  const seen = new Set([id, ...R.map(r => r.other)]), far = [];
+  for (const r of R) for (const r2 of rels(r.other)) if (!seen.has(r2.other)){ seen.add(r2.other); far.push({id:r2.other, via:r.other}); }
+  $("#far").innerHTML = far.length ? `<span class="mono">Two steps away</span>` + far.slice(0, 6).map(f => { const o = byId[f.id];
+    return `<button data-id="${o.id}">${esc(o.text.slice(0, 110))}${o.text.length > 110 ? "…" : ""}<span>${esc(o.src)} · via ${esc(surname(byId[f.via]))}</span></button>`; }).join("") : "";
+
+  // map labels for related items
+  relEls.forEach(l => l.el.remove());
+  relEls = [...res.map((r, i) => ["R", i, r]), ...push.map((r, i) => ["P", i, r])].map(([p, i, r]) => {
+    const el = document.createElement("div"); el.className = "rl" + (p === "P" ? " p" : ""); el.textContent = p + String(i+1).padStart(2, "0");
+    labels.appendChild(el); return {el, id:r.other}; });
+
+  // camera: frame selection + its relations inside the rail map
+  const pts = [it, ...R.map(r => byId[r.other])];
+  const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+  const pad = 0.12, bw = Math.max(.25, Math.max(...xs) - Math.min(...xs) + pad*2), bh = Math.max(.25, Math.max(...ys) - Math.min(...ys) + pad*2);
+  const rw = innerWidth > 860 ? (innerWidth - 64 - 11*20)/12*3 + 40 : innerWidth - 32;
+  const rh = innerWidth > 860 ? innerHeight*.36 : innerHeight*.24;
+  cam.tx = (Math.max(...xs) + Math.min(...xs))/2; cam.ty = (Math.max(...ys) + Math.min(...ys))/2;
+  cam.tz = Math.min(rw / bw, rh / bh);
+  if (STILL){ cam.x = cam.tx; cam.y = cam.ty; cam.z = cam.tz; }
+
+  renderTrail(); paintFg();
+  document.querySelectorAll("#focus .card, #far button").forEach(el => el.onclick = () => select(el.dataset.id));
+  window.scrollTo({top:0, behavior: opt.fromTrail || state.trail.length < 2 ? "auto" : "smooth"});
+}
+function renderTrail(){
+  $("#trail").innerHTML = state.trail.map((id, i) => `<li data-i="${i}" class="${i === state.ti ? "cur" : ""}"><span class="mono">${String(i+1).padStart(2, "0")}</span>
+    <span>${esc(byId[id].text.slice(0, 70))}…</span></li>`).join("");
+  $("#trail").querySelectorAll("li").forEach(li => li.onclick = () => { state.ti = +li.dataset.i; select(state.trail[state.ti], {fromTrail:true}); });
+}
+function unselect(){
+  state.sel = null; state.related = new Map(); document.body.classList.remove("focus");
+  relEls.forEach(l => l.el.remove()); relEls = [];
+  history.replaceState(null, "", location.pathname); paintFg(); setTimeout(() => fitAll(false), 60);
+}
+function random(){ const c = D.items.filter(i => i.id !== state.sel); select(c[Math.floor(Math.random()*c.length)].id); }
+
+$("#q").addEventListener("input", e => { state.query = e.target.value; if (state.sel) unselect(); renderList(); paintFg(); });
+addEventListener("keydown", e => {
+  if (e.target === $("#q")){ if (e.key === "Escape"){ e.target.value = ""; state.query = ""; renderList(); paintFg(); e.target.blur(); } return; }
+  if (e.key === "/"){ e.preventDefault(); $("#q").focus(); }
+  else if (e.key === "Escape" && state.sel) unselect();
+  else if (e.key === "r" || e.key === "R") random();
+  else if (e.key === "ArrowLeft" && state.ti > 0){ state.ti--; select(state.trail[state.ti], {fromTrail:true}); }
+  else if (e.key === "ArrowRight" && state.ti < state.trail.length - 1){ state.ti++; select(state.trail[state.ti], {fromTrail:true}); }
+});
+
+resize(); fitAll(true); paintFg(); renderList(); requestAnimationFrame(frame);
+const h = location.hash.slice(1); if (byId[h]) setTimeout(() => select(h), 300);
+})();
+</script>
+</body>
+</html>

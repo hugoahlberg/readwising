@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Commonplace</title>
+<meta name="description" content="Everything I've highlighted, and where it disagrees with itself.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='2' y='2' width='12' height='12' fill='%23e5341d'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/src/base.css">
+<link rel="stylesheet" href="/src/spectrum.css">
+</head>
+<body>
+<header id="bar" class="grid">
+  <a id="mark" href="./"><i></i>Commonplace</a>
+  <nav id="nav" class="mono"><a class="on" href="./">Index</a><a href="universe.html">◎ Universe</a></nav>
+  <div id="searchwrap"><input id="q" type="search" placeholder="Search highlights" autocomplete="off" spellcheck="false" aria-label="Search highlights"></div>
+  <div id="count" class="mono"></div>
+</header>
+
+<main id="app">
+  <div id="loading" class="mono">Loading the library…</div>
+
+  <section id="dispute" class="grid" hidden>
+    <div class="kick mono"><span><b>Dispute</b> <span id="dn"></span></span><span id="dth"></span></div>
+    <button class="side" id="sa"></button>
+    <button class="side" id="sb"></button>
+    <div id="both"><span class="mono">Both true if</span><p id="bt"></p><button class="mono" id="nextd">Next dispute →</button></div>
+  </section>
+
+  <section id="filters" class="grid" hidden>
+    <h2>The index</h2>
+    <div id="chips"></div>
+    <div id="toggles"></div>
+  </section>
+  <div id="head" class="grid mono" hidden>
+    <span class="h-n">№</span><span class="h-c">Type</span><span class="h-q">Highlight</span>
+    <span class="h-s">Source</span><span class="h-r">Agree ↔ Disagree</span>
+  </div>
+  <div id="rows"></div>
+  <div id="sentinel"></div>
+</main>
+
+<section id="sheet" aria-hidden="true" aria-label="Highlight">
+  <div id="sbar" class="grid"><button id="close">← Index</button><div id="crumbs" class="mono"></div><span class="r mono">Esc close · ← → trail</span></div>
+  <div id="stage" class="grid">
+    <div id="over" class="mono"></div>
+    <h1 id="squote"></h1>
+    <div id="snote" hidden></div>
+    <div id="ssrc"></div>
+    <div id="sacts" class="mono"></div>
+  </div>
+  <div id="reviewed">
+    <div id="wavewrap"><span id="wavecap" class="mono">How contested this idea is in the library</span><canvas id="wave"></canvas></div>
+    <div id="scale" class="grid"></div>
+    <div id="cols" class="grid"></div>
+  </div>
+  <div id="unreviewed" hidden></div>
+  <section id="near"></section>
+</section>
+
+<script type="module" src="/src/spectrum.js"></script>
+</body>
+</html>
